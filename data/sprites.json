@@ -1,0 +1,60 @@
+{
+  "frames": [
+    {
+      "name": "tile-soil",
+      "frame": {"x":0,"y":0,"w":16,"h":16}
+    },
+    {
+      "name": "tile-water",
+      "frame": {"x":16,"y":0,"w":16,"h":16}
+    },
+    {
+      "name": "tile-light",
+      "frame": {"x":32,"y":0,"w":16,"h":16}
+    },
+    {
+      "name": "growth-0_1",
+      "frame": {"x":0,"y":16,"w":16,"h":16}
+    },
+    {
+      "name": "growth-1_1",
+      "frame": {"x":16,"y":16,"w":16,"h":16}
+    },
+    {
+      "name": "growth-2_1",
+      "frame": {"x":32,"y":16,"w":16,"h":16}
+    },
+    {
+      "name": "growth-3_1",
+      "frame": {"x":48,"y":16,"w":16,"h":16}
+    },
+    {
+      "name": "growth-4_1",
+      "frame": {"x":64,"y":16,"w":16,"h":16}
+    },
+    {
+      "name": "growth-0_1",
+      "frame": {"x":0,"y":32,"w":16,"h":16}
+    },
+    {
+      "name": "growth-1_1",
+      "frame": {"x":16,"y":32,"w":16,"h":16}
+    },
+    {
+      "name": "growth-2_1",
+      "frame": {"x":32,"y":32,"w":16,"h":16}
+    },
+    {
+      "name": "growth-3_1",
+      "frame": {"x":48,"y":32,"w":16,"h":16}
+    },
+    {
+      "name": "growth-4_1",
+      "frame": {"x":64,"y":32,"w":16,"h":16}
+    }
+  ],
+  "meta": {
+    "image": "../assets/sprites.png",
+    "tile": 16
+  }
+}
