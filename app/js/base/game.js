@@ -3,53 +3,61 @@ function  Game (options) {
             return this;
           }
 
-          Game.prototype.defaults = {
-            width: window.innerWidth, height: window.innerHeight
-          };
-          Game.prototype.start = function () {
-            PIXI.scaleModes.DEFAULT = PIXI.scaleModes.NEAREST;
+Game.ticks = {};
+Game.registerTick = function (tickable) {
+  var key = tickable.id || tickable.name;
+  this.ticks[key] = tickable.tick.bind(tickable);
+};
 
-            this.stage = new PIXI.Stage(0x231b17);
-            this.renderer = new PIXI.autoDetectRenderer(this.width, this.height);
-            this.loader = new PIXI.AssetLoader(['/data/sprites.json']);
-            this.loader.on('onComplete', this.onLoad.bind(this));
-            this.loader.on('onProgress', this.onLoading.bind(this));
+Game.prototype = {
+  defaults: { width: window.innerWidth, height: window.innerHeight },
+  start: function () {
+    PIXI.scaleModes.DEFAULT = PIXI.scaleModes.NEAREST;
 
-            Sprite.initialize(this.stage);
+    this.stage = new PIXI.Stage(0x231b17);
+    this.renderer = new PIXI.autoDetectRenderer(this.width, this.height);
+    this.loader = new PIXI.AssetLoader(['/data/sprites.json']);
+    this.loader.on('onComplete', this.onLoad.bind(this));
+    this.loader.on('onProgress', this.onLoading.bind(this));
 
-            document.body.appendChild(this.renderer.view);
-            this.loader.load();
-          };
-          Game.prototype.onLoading = function (e) {
-            var loader = e.loader;
-            if (e.loader.json && e.loader.json.frames) Sprite.load(e.loader.json);
-          };
-          Game.prototype.onLoad = function () {
-            GameTime.start();
-            Environment.generate(5, 6);
-            var Nursery = new PlantGenerator(),
-                plantLayer = 1;
+    Sprite.initialize(this.stage);
 
-            _.each(Environment.tiles, function (tile) {
-              Sprite.get(tile.id).update({ // add interactions
-                buttonMode: true,
-                interactive: true,
-                click: function (sprite) {
-                  var plant = Nursery.get(1);
-                  if (Environment.get(plant.id).move(tile.x, tile.y, plantLayer))
-                    Growth.get(plant.id).start();
-                }
-              });
-            });
-            
-            this.tick();
-          };
-          Game.prototype.tick = function () {
-            var start = null,
-                animate = function (time) {
-                  GameTime.tick(time);
-                  this.renderer.render(this.stage);
-                  this.frame = window.requestAnimationFrame(animate);
-                }.bind(this);
-            this.frame = window.requestAnimationFrame(animate);
-          };
+    document.body.appendChild(this.renderer.view);
+    this.loader.load();
+  },
+  onLoading: function (e) {
+    var loader = e.loader;
+    if (e.loader.json && e.loader.json.frames) Sprite.load(e.loader.json);
+  },
+  onLoad: function () {
+    GameTime.start();
+    Environment.generate(12, 12);
+    var actions = new Actions(),
+        player = Entity.create([actions, new Hunger(), new Health()]),
+        nursery = Entity.create([new Useable(), new PlantGenerator()]);
+
+    _.each(Environment.tiles, function (tile) {
+      Sprite.get(tile.entity).update({ // add interactions
+        buttonMode: true,
+        interactive: true,
+        click: function (sprite) {
+          if (tile[Environment.FOREGROUND]) console.log(actions.harvest(tile));
+          else actions.plant(nursery, tile);
+        }
+      });
+    });
+    
+    this.tick();
+  },
+  tick: function () {
+    var start = null,
+        animate = function (time) {
+          GameTime.tick(time); // Always first, no need to register GameTime
+          _.each(Game.ticks, function (tick) { tick(time); });
+
+          this.renderer.render(this.stage);
+          this.frame = window.requestAnimationFrame(animate);
+        }.bind(this);
+    this.frame = window.requestAnimationFrame(animate);
+  }
+};

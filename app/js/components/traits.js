@@ -1,13 +1,13 @@
 Traits = Component.create({
-      constructor: function Traits () { return this; },
-      initialize: function () {
-        var traits = Genome.express(this.entity);
-        this.parse(traits);
+      constructor: function Traits (options) {
+        _.extend(this, options)
+        this.parse(this.traits);
+        return this;
       },
       parse: function (traits) {
         if (_.size(traits) === 0) {
           this.dud = true;
-          return;
+          return this;
         }
         
         this.monocot = traits.monocot && !traits.dicot ? true : false;
@@ -57,7 +57,7 @@ Traits = Component.create({
               .reduce(function (sum, num) { return sum + num; }).value(),
           output: traits.root ? traits.root + 1 : 1
         };
-        this.typing();
+        return this.typing();
       },
       typing: function () {
         if (this.monocot) {
@@ -93,5 +93,6 @@ Traits = Component.create({
           this.leaf.edible += 1;
           this.type = 'herb';
         }
+        return this;
       }
     });

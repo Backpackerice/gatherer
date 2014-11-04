@@ -9,26 +9,40 @@ Growth = Component.create({
 
         this.ticks = this.cycle = this.stems = this.leaves = this.flowers = this.roots = this.seeds = 0;
         if (!this.traits.dud) this.advance();
+        return this;
+      },
+      stop: function () {
+        growth.stage = -1;
+        Sprite.get(this.entity).remove();
+        Environment.get(this.entity).move();
+        return this;
       },
       advance: function (stage) {
         this.stage = stage ? stage : this.stage + 1;
         this.stageTick = this.ticks;
         this.updateSprite();
+        return this;
       },
       updateSprite: function () {
+        if (this.stage < this.SEED) return; // not started
         if (this.sprite) this.sprite.update({
           frame: 'growth-' + Math.min(this.stage, 4) + '_1',
-          position: Environment.toPosition(this.env.tile.x, this.env.tile.y)
+          position: {x: this.env.tile.x, y: this.env.tile.y},
+          layer: this.env.layer
         });
+        return this;
       },
       tick: function (gametime) {
-        var lastTick = this.lastTick || new GameTime();
-        if (gametime.day > lastTick.day) {
-          if (this.stage < this.SEED) return; // not started
+        if (this.stage < this.SEED) return; // not started
+        if (!this.lastTick) this.lastTick = new GameTime();
+
+        var lastTick = this.lastTick;
+        if (gametime.days > lastTick.days) {
           this.doTick[this.stage].bind(this)();
           this.ticks++;
           this.lastTick = gametime;
         }
+        return this;
       },
 
       doTick: [
@@ -37,6 +51,7 @@ Growth = Component.create({
           if (this.roots > 0 || source.soil + source.water > 0.6)
             this.roots += this.traits.root.output * (source.water + source.soil);
           if (this.roots > 4) this.advance();
+          return this;
         },
 
         function sprout () {
@@ -45,6 +60,7 @@ Growth = Component.create({
           this.stems += this.traits.stem.output * (source.water + source.soil);
           this.leaves += 0.5 * this.traits.leaf.output * (source.water + 2 * source.light);
           if (this.leaves > 5) this.advance();
+          return this;
         },
 
         function mature () {
@@ -53,18 +69,21 @@ Growth = Component.create({
           this.stems += 0.5 * this.traits.stem.output * (source.water + source.soil);
           this.leaves += 0.5 * this.traits.leaf.output * (source.water + 2 * source.light);
           if (this.leaves + this.roots + this.stems > 20 && this.ticks > 20) this.advance();
+          return this;
         },
 
         function flowering () {
           var source = this.env.tile.effects.source;
           this.flowers += 0.5 * this.traits.flower.output * (source.light + source.water + source.soil);
           if (this.flowers > (3 + 1.5 * this.traits.flower.blooming) && this.ticks - this.stageTick > 5) this.advance();
+          return this;
         },
 
         function ripening () {
           this.flowers = this.flowers - 1;
           this.seeds += this.traits.seed.output;
           if (Math.floor(this.flowers) <= 0) this.advance();
+          return this;
         },
 
         function resting () {
@@ -79,6 +98,7 @@ Growth = Component.create({
             this.cycle++;
             this.advance(next);
           }
+          return this;
         }
       ]
     });
@@ -91,4 +111,4 @@ Growth.tick = function () {
   });
 };
 
-GameTime.register(Growth);
+Game.registerTick(Growth);

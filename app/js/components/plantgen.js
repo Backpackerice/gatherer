@@ -1,10 +1,8 @@
 PlantGenerator = Component.create({
-      constructor: function PlantGenerator (parentsOrTraits, count) {
-        if (parentsOrTraits && parentsOrTraits.mother) {
-          this.mother = parentsOrTraits.mother;
-          this.parents = parentsOrTraits.parents;
-        } else {
-          this.traits = parentsOrTraits || this.traits;
+      constructor: function PlantGenerator (options) {
+        _.extend(this, options);
+        if (this.parents) this.mother = this.parents[0];
+        else {
           var total = _.reduce(this.traits, function (sum, num) { return sum + num; }),
               chance = 0;
           this.chances = _.map(this.traits, function (count, trait) {
@@ -12,18 +10,7 @@ PlantGenerator = Component.create({
             return {trait: trait, chance: chance};
           });
         }
-        this.count = count || Infinity;
         return this;
-      },
-      create: function (chromosomes) {
-        var plant = new Entity(),
-            plantLayer = 1;
-        new Genome(chromosomes).register(plant);
-        new Traits().register(plant);
-        new Growth().register(plant);
-        new Environment().register(plant);
-        new Sprite(null, plantLayer).register(plant);
-        return plant;
       },
       randomTrait: function () {
         var chance = Math.random(), trait = _.last(this.chances).trait;
@@ -36,9 +23,6 @@ PlantGenerator = Component.create({
         return trait;
       },
       get: function (level, ploidy) {
-        if (this.count < 1) return false;
-        this.count--;
-
         var chromosomes = [];
 
         if (this.mother) {
@@ -59,8 +43,7 @@ PlantGenerator = Component.create({
             chromosomes.push(chromosome);
           }
         }
-
-        return this.create(chromosomes);
+        return chromosomes;
       },
       traits: {
         'growth': 10, 'red': 5, 'yellow': 5, 'blue': 5,

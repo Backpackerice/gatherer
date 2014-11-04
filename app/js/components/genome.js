@@ -1,7 +1,16 @@
 Genome = Component.create({
-      constructor: function Genome (chromosomes) {
-        this.chromosomes = chromosomes;
-        this.ploidy = chromosomes.length === 0 ? 0 : this.chromosomes[0].length;
+      chromosomes: [],
+      define: {
+        ploidy: {
+          enumerable: true,
+          get: function () {
+            return this.chromosomes.length === 0 ? 0 : this.chromosomes[0].length
+          }
+        }
+      },
+
+      constructor: function Genome (options) {
+        _.extend(this, options);
         return this;
       },
       meiosis: function () {
@@ -16,8 +25,21 @@ Genome = Component.create({
           });
         }
         return zygote;
+      },
+      express: function () {
+        var counts = [], traits = {};
+        _.each(this.chromosomes, function (chromosome, i) {
+          var ts = [], c = {};
+          _.each(chromosome, function (chromatid) { ts = ts.concat(chromatid.split('.'));});
+          _.each(ts, function (t) { c[t] = c[t] ? c[t] + 1 : 1; });
+          counts.push(c);
+        });
+        counts.push(function (a, b) { return (a > b) ? a : b; });
+        traits = _.merge.apply(this, counts);
+        return traits;
       }
     });
+
 Genome.recombine = function (eId1, eId2) {
       var g1 = this.get(eId1), g2 = this.get(eId2),
           chromosomes = [];
@@ -26,19 +48,5 @@ Genome.recombine = function (eId1, eId2) {
         _.remove(chromosomes, function (chromosome) { return chromosome.length === 0; });
       }
       return chromosomes;
-    };
-Genome.express = function (eId) {
-      var g = this.get(eId);
-      var counts = [], traits = {};
-
-      _.each(g.chromosomes, function (chromosome, i) {
-        var ts = [], c = {};
-        _.each(chromosome, function (chromatid) { ts = ts.concat(chromatid.split('.'));});
-        _.each(ts, function (t) { c[t] = c[t] ? c[t] + 1 : 1; });
-        counts.push(c);
-      });
-      counts.push(function (a, b) { return (a > b) ? a : b; });
-      traits = _.merge.apply(this, counts);
-      return traits;
     };
           

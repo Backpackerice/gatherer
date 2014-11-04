@@ -80,8 +80,8 @@ module.exports = function (grunt) {
         tasks: ['concat:js']
       },
       css: {
-        files: ['app/sass/*.scss'],
-        tasks: ['sass']
+        files: ['app/css/*.less'],
+        tasks: ['less']
       },
       data: {
         files: ['data/**/*'],

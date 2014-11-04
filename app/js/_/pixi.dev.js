@@ -1622,6 +1622,17 @@ PIXI.DisplayObjectContainer.prototype.removeStageReference = function()
 };
 
 /**
+ * Checks if a child is contained in the container.
+ * https://github.com/GoodBoyDigital/pixi.js/issues/34
+ *
+ * @method contains
+ */
+PIXI.DisplayObjectContainer.prototype.contains = function(child)
+{
+    return (this.children.indexOf( child ) !== -1);
+}
+
+/**
 * Renders the object using the WebGL renderer
 *
 * @method _renderWebGL
