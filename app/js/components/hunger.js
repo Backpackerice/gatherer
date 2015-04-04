@@ -18,7 +18,7 @@ Hunger = Component.create({
 
   initialize: function () {
     this.on('hunger:consume', this.adjust.bind(this));
-  }.
+  },
 
   adjust: function (health) {
     this.lost -= health;

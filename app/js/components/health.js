@@ -17,7 +17,7 @@ Health = Component.create({
   },
 
   initialize: function () {
-    this.on('hunger', function () { this.adjust(-1); });
+    this.on('hunger', function () { this.adjust(-1); }.bind(this));
     this.on('poison', this.adjust.bind(this));
   },
 
