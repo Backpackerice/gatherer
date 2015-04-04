@@ -1,44 +1,27 @@
 module.exports = function (grunt) {
   grunt.initConfig({
-    pkg: grunt.file.readJSON('package.json'),
-
-    concat: {
-      html: {
-        src: ['app/templates/*.html'],
-        dest: 'build/templates.html'
-      },
-      js: {
-        src: ['app/js/**/*.js'],
-        dest: 'build/scripts.js'
-      }
-    },
-
-    replace: {
-      templates: {
-        src: ['app/index.html'],
-        dest: 'build/',
-        replacements: [{
-          from: '<!-- TEMPLATES -->',
-          to: function () {
-            var templates = '';
-            try { templates = grunt.file.read('./build/templates.html'); }
-            catch (e) { console.log(e); }
-            return templates;
-          }
-        }]
+    shell: {
+      scripts: {
+        command: 'duo app/build.js > build/build.js'
       }
     },
 
     less: {
       css: {
-        files: {'build/styles.css' : 'app/css/source.less'}
+        files: {'build/build.css' : 'app/build.less'}
       }
     },
 
     copy: {
+      index: {
+        src: 'app/index.html',
+        dest: 'build/index.html'
+      },
       data: {
-        src: 'data/*',
-        dest: 'build/'
+        expand: true,
+        cwd: 'app/data/',
+        src: ['**'],
+        dest: 'build/data/',
       },
       assets: {
         expand: true,
@@ -48,16 +31,14 @@ module.exports = function (grunt) {
       }
     },
 
-    clean: ['build/templates.html'],
-
     uglify: {
       options: {
         mangle: true,
         compress: true,
       },
       build: {
-        src: 'build/scripts.js',
-        dest: 'build/scripts.js'
+        src: 'build/build.js',
+        dest: 'build/build.js'
       }
     },
 
@@ -71,40 +52,34 @@ module.exports = function (grunt) {
     },
 
     watch: {
-      html: {
-        files: ['app/templates/*.html'],
-        tasks: ['concat:html', 'replace']
-      },
       js: {
-        files: ['app/js/**/*.js'],
-        tasks: ['concat:js']
+        files: ['app/modules/**/*.js', 'app/**/*.js'],
+        tasks: ['scripts']
       },
       css: {
-        files: ['app/css/*.less'],
-        tasks: ['less']
+        files: ['app/**/*.less'],
+        tasks: ['css']
       },
       data: {
-        files: ['data/**/*'],
-        tasks: ['copy:data']
-      },
-      assets: {
-        files: ['assets/**/*'],
-        tasks: ['copy:assets']
+        files: ['app/data/**/*', 'app/assets/**/*', 'app/index.html'],
+        tasks: ['data']
       }
     },
   });
 
   grunt.loadNpmTasks('grunt-nodemon');
   grunt.loadNpmTasks('grunt-concurrent');
-  grunt.loadNpmTasks('grunt-text-replace');
-  grunt.loadNpmTasks('grunt-contrib-copy');
-  grunt.loadNpmTasks('grunt-contrib-clean');
-  grunt.loadNpmTasks('grunt-contrib-uglify');
-  grunt.loadNpmTasks('grunt-contrib-concat');
-  grunt.loadNpmTasks('grunt-contrib-less');
   grunt.loadNpmTasks('grunt-contrib-watch');
+  grunt.loadNpmTasks('grunt-contrib-copy');
+  grunt.loadNpmTasks('grunt-contrib-uglify');
+  grunt.loadNpmTasks('grunt-contrib-less');
+  grunt.loadNpmTasks('grunt-shell');
 
-  grunt.registerTask('default', ['concat', 'replace', 'less', 'copy:data', 'copy:assets', 'clean']);
-  grunt.registerTask('dist', ['default', 'uglify']);
-  grunt.registerTask('dev', ['default', 'concurrent']);
+  grunt.registerTask('scripts', ['shell']);
+  grunt.registerTask('css', ['less']);
+  grunt.registerTask('data', ['copy']);
+
+  grunt.registerTask('default', ['scripts', 'css', 'data']);
+  grunt.registerTask('gatherer', ['default', 'uglify']);
+  grunt.registerTask('gatherer-dev', ['default', 'concurrent']);
 };
