@@ -16,7 +16,7 @@ Game.prototype = {
 
     this.stage = new PIXI.Stage(0x231b17);
     this.renderer = new PIXI.autoDetectRenderer(this.width, this.height);
-    this.loader = new PIXI.AssetLoader(['/data/sprites.json']);
+    this.loader = new PIXI.AssetLoader(['data/sprites.json']);
     this.loader.on('onComplete', this.onLoad.bind(this));
     this.loader.on('onProgress', this.onLoading.bind(this));
 
