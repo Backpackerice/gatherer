@@ -1,6 +1,6 @@
-var _ = require('lodash'),
-    Entity = require('./entity.js'),
-    Dispatcher = require('./dispatcher.js');
+var _ = require('lodash');
+var Entity = require('./entity.js');
+var Dispatcher = require('./dispatcher.js');
 
 var Component = module.exports = function (prototype) {
   var entities = {}; // hidden entity map
