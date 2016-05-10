@@ -46271,9 +46271,9 @@
 /* 141 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var _ = __webpack_require__(3),
-	    Entity = __webpack_require__(142),
-	    Dispatcher = __webpack_require__(143);
+	var _ = __webpack_require__(3);
+	var Entity = __webpack_require__(142);
+	var Dispatcher = __webpack_require__(143);
 
 	var Component = module.exports = function (prototype) {
 	  var entities = {}; // hidden entity map
