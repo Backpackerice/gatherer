@@ -2,7 +2,7 @@
   "name": "Gatherer",
   "description": "Random farming simulator with a high variation in plant life.",
   "version": "1.0.0",
-  "private": true,
+  "main": "gatherer.js",
   "scripts": {
     "prepublish": "webpack src/gatherer.js gatherer.js"
   },
