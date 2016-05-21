@@ -77,8 +77,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  // setup game
 	  var options =  {
-	    assets: ['/data/sprites.json'],
-	    ready: function () {
+	    assets: ['assets/sprites.json'],
+	    ready: function (loader, resources) {
+	      Sprite.spritesheet(resources['assets/sprites.json'].data);
 	      Terrain.generate(12, 12);
 	      // TODO: better interactions setup
 	      // var actions = new Actions(),
@@ -95,10 +96,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	      //     }
 	      //   });
 	      // });
-	    },
-	    progress: function (content) {
-	      var loader = content.loader;
-	      if (loader.json && loader.json.frames) Sprite.load(loader.json);
 	    }
 	  };
 
@@ -113,10 +110,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	    // game.registerUpdate(Growth.update.bind(Growth));
 	    // game.registerUpdate(Effects.update.bind(Effects));
 
-	    //updates in render loop
+	    // updates in render loop
 	    game.registerRender(Sprite.update.bind(Sprite));
 
-	    game.start();
+	    var view = game.start();
+	    document.body.appendChild(view);
 	  };
 
 	  window.onload = initialize;
@@ -129,14 +127,14 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 1 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(module) {var _ = __webpack_require__(3),
-	    PIXI = __webpack_require__(4),
-	    GameTime = __webpack_require__(139);
+	/* WEBPACK VAR INJECTION */(function(module) {var _ = __webpack_require__(3);
+	var PIXI = __webpack_require__(4);
+	var GameTime = __webpack_require__(139);
 
 	function Game (options) {
 	  this.width = options.width || window.innerWidth;
 	  this.height = options.height || window.innerHeight;
-	  this.stage = options.stage || new PIXI.Stage(0x231b17);
+	  this.stage = options.stage || new PIXI.Container(0x231b17);
 	  this.assets = options.assets || [];
 	  this.ready = options.ready || _.noop;
 	  this.progress = options.progress || _.noop;
@@ -149,35 +147,46 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	Game.prototype = {
 	  start: function (view) {
-	    PIXI.scaleModes.DEFAULT = PIXI.scaleModes.NEAREST;
+	    PIXI.SCALE_MODES.DEFAULT = PIXI.SCALE_MODES.NEAREST;
 
-	    this.renderer = new PIXI.autoDetectRenderer(this.width, this.height, {view: view});
-	    this.loader = new PIXI.AssetLoader(this.assets);
-	    this.loader.on('onComplete', this.onLoaderComplete.bind(this));
-	    this.loader.on('onProgress', this.onLoaderProgress.bind(this));
+	    var loader = new PIXI.loaders.Loader();
+	    loader.add(this.assets);
+	    loader.on('complete', this.onReady.bind(this));
+	    loader.load();
 
-	    document.body.appendChild(this.renderer.view);
-	    this.loader.load();
+	    this.renderer = new PIXI.autoDetectRenderer(
+	      this.width, this.height, {view: view}
+	    );
+	    return this.renderer.view;
 	  },
-	  onLoaderProgress: function (e) { this.progress(e.content); },
-	  onLoaderComplete: function () {
+
+	  onReady: function (loader, resources) {
 	    GameTime.start();
-	    this.ready();
+	    this.ready(loader, resources);
 	    this.loop();
 	  },
 
-	  registerUpdate: function (update) { this.updaters.push(update); },
-	  registerRender: function (render) { this.renderers.push(render); },
+	  registerUpdate: function (update) {
+	    this.updaters.push(update);
+	  },
+
+	  registerRender: function (render) {
+	    this.renderers.push(render);
+	  },
 
 	  update: function (time) {
 	    var newGameTime = this.time = GameTime.tick(time); // Tick time first
-	    _.each(this.updaters, function (update) { update(newGameTime); });
+	    _.each(this.updaters, function (update) {
+	      update(newGameTime);
+	    });
 	  },
 
 	  render: function () {
 	    var time = this.time;
 	    this.renderer.render(this.stage);
-	    _.each(this.renderers, function (render) { render(time); });
+	    _.each(this.renderers, function (render) {
+	      render(time);
+	    });
 	  },
 
 	  loop: function () {
@@ -46552,7 +46561,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.frameSetId = key;
 	        this.frameSet = Sprite.getFrame(key); // getFrameSet
 	        var texture = Sprite.getTexture(this.frameSet); //this.frameSet[0]
-	        this.pixi.setTexture(texture);
+	        this.pixi.texture = texture;
 	        this.setXY(this.x, this.y); // update position in case of height change
 	        return this;
 	      },
@@ -46577,35 +46586,42 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return this;
 	      },
 
-	      update: function (time) {
+	      update: function () {
 	        return;
 	      }
 	    });
 
 	Sprite.initialize = function (stage) {
 	  this.layers = [ // 4 layers
-	    new PIXI.DisplayObjectContainer(), // 0: terrain
-	    new PIXI.DisplayObjectContainer(), // 1: behind player
-	    new PIXI.DisplayObjectContainer(), // 2: at player
-	    new PIXI.DisplayObjectContainer() // 3: in front of player
+	    new PIXI.Container(), // 0: terrain
+	    new PIXI.Container(), // 1: behind player
+	    new PIXI.Container(), // 2: at player
+	    new PIXI.Container() // 3: in front of player
 	  ];
-	  _.each(this.layers, function (layer) { stage.addChild(layer); }.bind(this));
+	  _.each(this.layers, function (layer) { stage.addChild(layer); });
 	};
-	Sprite.load = function (spriteSheet) {
-	  var frames = spriteSheet.frames;
+
+	Sprite.spritesheet = function (spritesheet) {
+	  var frames = spritesheet.frames;
 	  this.scaleVal = 4;
 	  this.frames = _.chain(frames).map(function (frame, i) {
 	        frame.index = i;
 	        return frame;
 	      }).groupBy('name')
-	      .mapValues(function (set) { return _.pluck(set, 'index'); }).value();
+	      .mapValues(function (set) {
+	        return _.map(set, function (frame) {
+	          return frame.index;
+	        });
+	      }).value();
 	  this.scale = {x: this.scaleVal, y: this.scaleVal};
-	  this.tile = spriteSheet.meta.tile;
-	  this.tileSize = spriteSheet.meta.tile * this.scaleVal;
+	  this.tile = spritesheet.meta.tile;
+	  this.tileSize = spritesheet.meta.tile * this.scaleVal;
 	};
+
 	Sprite.update = function (time) {
-	  var sprites = this.get();
-	  for (var i = 0; i < sprites.length; i++) { sprites[i].update(time); }
+	  this.each(function (sprite) {
+	    sprite.update(time);
+	  });
 	};
 
 	Sprite.toPosition = function (x) { return x * this.tileSize; };

@@ -54,7 +54,7 @@
     }
   ],
   "meta": {
-    "image": "../assets/sprites.png",
+    "image": "sprites.png",
     "tile": 16
   }
 }

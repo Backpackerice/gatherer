@@ -35,7 +35,7 @@ var Sprite = module.exports = new Component({
         this.frameSetId = key;
         this.frameSet = Sprite.getFrame(key); // getFrameSet
         var texture = Sprite.getTexture(this.frameSet); //this.frameSet[0]
-        this.pixi.setTexture(texture);
+        this.pixi.texture = texture;
         this.setXY(this.x, this.y); // update position in case of height change
         return this;
       },
@@ -60,35 +60,42 @@ var Sprite = module.exports = new Component({
         return this;
       },
 
-      update: function (time) {
+      update: function () {
         return;
       }
     });
 
 Sprite.initialize = function (stage) {
   this.layers = [ // 4 layers
-    new PIXI.DisplayObjectContainer(), // 0: terrain
-    new PIXI.DisplayObjectContainer(), // 1: behind player
-    new PIXI.DisplayObjectContainer(), // 2: at player
-    new PIXI.DisplayObjectContainer() // 3: in front of player
+    new PIXI.Container(), // 0: terrain
+    new PIXI.Container(), // 1: behind player
+    new PIXI.Container(), // 2: at player
+    new PIXI.Container() // 3: in front of player
   ];
-  _.each(this.layers, function (layer) { stage.addChild(layer); }.bind(this));
+  _.each(this.layers, function (layer) { stage.addChild(layer); });
 };
-Sprite.load = function (spriteSheet) {
-  var frames = spriteSheet.frames;
+
+Sprite.spritesheet = function (spritesheet) {
+  var frames = spritesheet.frames;
   this.scaleVal = 4;
   this.frames = _.chain(frames).map(function (frame, i) {
         frame.index = i;
         return frame;
       }).groupBy('name')
-      .mapValues(function (set) { return _.pluck(set, 'index'); }).value();
+      .mapValues(function (set) {
+        return _.map(set, function (frame) {
+          return frame.index;
+        });
+      }).value();
   this.scale = {x: this.scaleVal, y: this.scaleVal};
-  this.tile = spriteSheet.meta.tile;
-  this.tileSize = spriteSheet.meta.tile * this.scaleVal;
+  this.tile = spritesheet.meta.tile;
+  this.tileSize = spritesheet.meta.tile * this.scaleVal;
 };
+
 Sprite.update = function (time) {
-  var sprites = this.get();
-  for (var i = 0; i < sprites.length; i++) { sprites[i].update(time); }
+  this.each(function (sprite) {
+    sprite.update(time);
+  });
 };
 
 Sprite.toPosition = function (x) { return x * this.tileSize; };

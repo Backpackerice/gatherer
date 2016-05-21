@@ -21,8 +21,9 @@ var Gatherer = {}; // globally accessible
 
   // setup game
   var options =  {
-    assets: ['/data/sprites.json'],
-    ready: function () {
+    assets: ['assets/sprites.json'],
+    ready: function (loader, resources) {
+      Sprite.spritesheet(resources['assets/sprites.json'].data);
       Terrain.generate(12, 12);
       // TODO: better interactions setup
       // var actions = new Actions(),
@@ -39,10 +40,6 @@ var Gatherer = {}; // globally accessible
       //     }
       //   });
       // });
-    },
-    progress: function (content) {
-      var loader = content.loader;
-      if (loader.json && loader.json.frames) Sprite.load(loader.json);
     }
   };
 
@@ -57,10 +54,11 @@ var Gatherer = {}; // globally accessible
     // game.registerUpdate(Growth.update.bind(Growth));
     // game.registerUpdate(Effects.update.bind(Effects));
 
-    //updates in render loop
+    // updates in render loop
     game.registerRender(Sprite.update.bind(Sprite));
 
-    game.start();
+    var view = game.start();
+    document.body.appendChild(view);
   };
 
   window.onload = initialize;

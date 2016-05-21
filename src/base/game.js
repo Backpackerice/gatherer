@@ -1,11 +1,11 @@
-var _ = require('lodash'),
-    PIXI = require('pixi.js'),
-    GameTime = require('./time.js');
+var _ = require('lodash');
+var PIXI = require('pixi.js');
+var GameTime = require('./time.js');
 
 function Game (options) {
   this.width = options.width || window.innerWidth;
   this.height = options.height || window.innerHeight;
-  this.stage = options.stage || new PIXI.Stage(0x231b17);
+  this.stage = options.stage || new PIXI.Container(0x231b17);
   this.assets = options.assets || [];
   this.ready = options.ready || _.noop;
   this.progress = options.progress || _.noop;
@@ -18,35 +18,46 @@ function Game (options) {
 
 Game.prototype = {
   start: function (view) {
-    PIXI.scaleModes.DEFAULT = PIXI.scaleModes.NEAREST;
+    PIXI.SCALE_MODES.DEFAULT = PIXI.SCALE_MODES.NEAREST;
 
-    this.renderer = new PIXI.autoDetectRenderer(this.width, this.height, {view: view});
-    this.loader = new PIXI.AssetLoader(this.assets);
-    this.loader.on('onComplete', this.onLoaderComplete.bind(this));
-    this.loader.on('onProgress', this.onLoaderProgress.bind(this));
+    var loader = new PIXI.loaders.Loader();
+    loader.add(this.assets);
+    loader.on('complete', this.onReady.bind(this));
+    loader.load();
 
-    document.body.appendChild(this.renderer.view);
-    this.loader.load();
+    this.renderer = new PIXI.autoDetectRenderer(
+      this.width, this.height, {view: view}
+    );
+    return this.renderer.view;
   },
-  onLoaderProgress: function (e) { this.progress(e.content); },
-  onLoaderComplete: function () {
+
+  onReady: function (loader, resources) {
     GameTime.start();
-    this.ready();
+    this.ready(loader, resources);
     this.loop();
   },
 
-  registerUpdate: function (update) { this.updaters.push(update); },
-  registerRender: function (render) { this.renderers.push(render); },
+  registerUpdate: function (update) {
+    this.updaters.push(update);
+  },
+
+  registerRender: function (render) {
+    this.renderers.push(render);
+  },
 
   update: function (time) {
     var newGameTime = this.time = GameTime.tick(time); // Tick time first
-    _.each(this.updaters, function (update) { update(newGameTime); });
+    _.each(this.updaters, function (update) {
+      update(newGameTime);
+    });
   },
 
   render: function () {
     var time = this.time;
     this.renderer.render(this.stage);
-    _.each(this.renderers, function (render) { render(time); });
+    _.each(this.renderers, function (render) {
+      render(time);
+    });
   },
 
   loop: function () {
