@@ -71,15 +71,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	  // var Hunger          = this.Hunger         = require('./modules/components/hunger.js');
 	  // var Inventory       = this.Inventory      = require('./modules/components/inventory.js');
 	  // var PlantGenerator  = this.PlantGenerator = require('./modules/components/plantgen.js');
-	  var Sprite          = this.Sprite         = __webpack_require__(147);
+	  this.Sprite = __webpack_require__(147);
 	  // var Traits          = this.Traits         = require('./modules/traits/traits.js');
 	  // var Useable         = this.Useable        = require('./modules/components/useable.js');
+	  var SpriteSystem = __webpack_require__(151);
 
 	  // setup game
 	  var options =  {
 	    assets: ['assets/sprites.json'],
-	    ready: function (loader, resources) {
-	      Sprite.spritesheet(resources['assets/sprites.json'].data);
+	    ready: function (game, loader, resources) {
+	      SpriteSystem.setup(game.stage, resources['assets/sprites.json'].data);
 	      Terrain.generate(12, 12);
 	      // TODO: better interactions setup
 	      // var actions = new Actions(),
@@ -102,8 +103,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var initialize = function () {
 	    var game = new Game(options);
 
-	    Sprite.initialize(game.stage);
-
 	    // updates in update loop
 	    // game.registerUpdate(Health.update.bind(Health));
 	    // game.registerUpdate(Hunger.update.bind(Hunger));
@@ -111,7 +110,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    // game.registerUpdate(Effects.update.bind(Effects));
 
 	    // updates in render loop
-	    game.registerRender(Sprite.update.bind(Sprite));
+	    game.registerRender(SpriteSystem.update);
 
 	    var view = game.start();
 	    document.body.appendChild(view);
@@ -162,7 +161,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  onReady: function (loader, resources) {
 	    GameTime.start();
-	    this.ready(loader, resources);
+	    this.ready(this, loader, resources);
 	    this.loop();
 	  },
 
@@ -46375,7 +46374,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return this;
 	}
 
-	Entity.prototype.destroy = function () { this.emit('destroy'); }
+	Entity.prototype.destroy = function () {
+	  this.destroyed = true;
+	  this.emit('destroy');
+	};
 
 	if (module && module.exports) module.exports = Entity;
 
@@ -46443,13 +46445,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	var Entity = __webpack_require__(142);
 	var Position = __webpack_require__(146);
 	var Sprite = __webpack_require__(147);
-	var randInt = __webpack_require__(148);
+	var randInt = __webpack_require__(149);
 	var pairing = __webpack_require__(144);
 
 	// terrain types to randomly generate
-	var soil = __webpack_require__(149);
+	var soil = __webpack_require__(150);
 
-	var generate = module.exports = function (cols, rows) {
+	module.exports = function (cols, rows) {
 	  for (var x = 0; x < cols; x++) {
 	    for (var y = 0; y < rows; y++) {
 	      var type = soil, // always soil for now
@@ -46457,13 +46459,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	          nutrients = randInt(type.nutrients[0], type.nutrients[1]);
 
 	      var e = new Entity();
-	      var terrain = this.create(water, nutrients).register(e);
-	      var position = Position.create(x, y).register(e);
-	      var sprite = Sprite.create().register(e);
-
-	      sprite.setLayer(0); // map layer
-	      sprite.setXY(x, y);
-	      sprite.setFrameSet(type.frameSet);
+	      this.create(water, nutrients).register(e);
+	      Position.create(x, y).register(e);
+	      Sprite.create({
+	        layer: 0,
+	        x: x,
+	        y: y,
+	        frameset: type.frameSet
+	      }).register(e);
 
 	      this.tiles[pairing(x, y)] = e;
 	    }
@@ -46524,124 +46527,250 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 147 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var PIXI = __webpack_require__(4),
-	    _ = __webpack_require__(3),
-	    Component = __webpack_require__(141);
+	// // var PIXI = require('pixi.js');
+	// var _ = require('lodash');
+	var Component = __webpack_require__(148);
 
-	var Sprite = module.exports = new Component({
-	      constructor: function Sprite (frameSet, layer, x, y) {
-	        this.frameSetId = frameSet || 0;
-	        this.layerId = layer || 1;
+	var Sprite = new Component({
+	  frameset: null,
+	  layer: null,
+	  subsprites: [],
+	  parent: null,
+	  x: 0, // grid positions
+	  y: 0
+	});
 
-	        this.frameSet = null;
-	        this.layer = null;
+	// Sprite.setup = function (stage, spritesheet) {
+	//   this.scaleVal = 4;
+	//   this.scale = {x: this.scaleVal, y: this.scaleVal};
+	//   this.tile = spritesheet.meta.tile;
+	//   this.tileSize = spritesheet.meta.tile * this.scaleVal;
+	//   this.layers = [ // 4 layers
+	//     new PIXI.Container(), // 0: terrain
+	//     new PIXI.Container(), // 1: behind player
+	//     new PIXI.Container(), // 2: at player
+	//     new PIXI.Container() // 3: in front of player
+	//   ];
+	//   this.frames = parseFrames(spritesheet.frames);
+	//   this.pixisprites = [];
+	//   _.each(this.layers, function (layer) { stage.addChild(layer); });
+	//   return this;
+	// };
 
-	        this.x = x || 0;
-	        this.y = y || 0;
+	// Sprite.update = function () {
+	//   var destroyed = [];
+	//   this.each(function (sprite, i) {
+	//     if (sprite.destroyed) {
+	//       destroyed.push(sprite);
+	//       return;
+	//     }
 
-	        this.modifiedX = 0;
-	        this.modifiedY = 0;
+	//     var pixisprite = Sprite.getPixi(i);
+	//     var frameset = Sprite.getFrame(sprite.frameset);
+	//     var texture = PIXI.Texture.fromFrame(frameset);
+	//     var x = sprite.x;
+	//     var y = sprite.y;
+	//     var baselineY = pixisprite.frame ? y + 1 - pixisprite.frame.height / Sprite.tile : y;
+	//     var modifiedX = Sprite.toPosition(x);
+	//     var modifiedY = pixisprite ? Sprite.toPosition(baselineY) : Sprite.toPosition(y);
+	//     var layer = Sprite.getLayer(sprite.layer);
 
-	        this.pixi = new PIXI.Sprite(Sprite.getTexture(0)); // need to initialize with a texture
-	        this.pixi.scale.set(Sprite.scaleVal, Sprite.scaleVal);
+	//     if (pixisprite.parent) {
+	//       pixisprite.parent.removeChild(pixisprite);
+	//     }
+	//     layer.addChild(pixisprite);
+	//     pixisprite.position.set(modifiedX, modifiedY);
+	//     pixisprite.texture = texture;
+	//   });
 
-	        this.setFrameSet(this.frameSetId);
-	        this.setLayer(this.layerId);
-	        this.setXY(this.x, this.y);
-	        return this;
-	      },
+	//   destroyed.forEach(function (sprite) {
+	//     sprite.unregister();
+	//   });
+	// };
 
-	      destroy: function () {
-	        this._parent_.destroy.apply(this, arguments);
-	        this.pixi.parent.removeChild(this.pixi);
-	        return this;
-	      },
+	// Sprite.getPixi = function (i) {
+	//   if (!this.pixisprites[i]) {
+	//     this.pixisprites[i] = new PIXI.Sprite(PIXI.Texture.fromFrame(0));
+	//     this.pixisprites[i].scale = this.scale;
+	//   }
+	//   return this.pixisprites[i];
+	// };
 
-	      setFrameSet: function (key) {
-	        this.frameSetId = key;
-	        this.frameSet = Sprite.getFrame(key); // getFrameSet
-	        var texture = Sprite.getTexture(this.frameSet); //this.frameSet[0]
-	        this.pixi.texture = texture;
-	        this.setXY(this.x, this.y); // update position in case of height change
-	        return this;
-	      },
+	// Sprite.toPosition = function (x) {
+	//   return x * this.tileSize;
+	// };
 
-	      setLayer: function (layer) {
-	        this.layerId = layer;
-	        this.layer = Sprite.getLayer(layer);
-	        if (this.pixi.parent) this.pixi.parent.removeChild(this.pixi);
-	        this.layer.addChild(this.pixi);
-	        return this;
-	      },
+	// Sprite.getFrame = function (frame) {
+	//   if (_.isNumber(frame)) return frame;
+	//   return _.sample(this.frames[frame]);
+	// };
 
-	      setXY: function (x, y) {
-	        this.x = x;
-	        this.y = y;
+	// Sprite.getLayer = function (layer) {
+	//   return this.layers[layer];
+	// };
 
-	        var baselineY = this.pixi.frame ? y + 1 - this.pixi.frame.height / Sprite.tile : y;
-
-	        this.modifiedX = Sprite.toPosition(x);
-	        this.modifiedY = this.pixi ? Sprite.toPosition(baselineY) : Sprite.toPosition(y);
-	        this.pixi.position.set(this.modifiedX, this.modifiedY);
-	        return this;
-	      },
-
-	      update: function () {
-	        return;
-	      }
-	    });
-
-	Sprite.initialize = function (stage) {
-	  this.layers = [ // 4 layers
-	    new PIXI.Container(), // 0: terrain
-	    new PIXI.Container(), // 1: behind player
-	    new PIXI.Container(), // 2: at player
-	    new PIXI.Container() // 3: in front of player
-	  ];
-	  _.each(this.layers, function (layer) { stage.addChild(layer); });
+	Sprite.addSubsprite = function (sprite, frameset, x, y, index) {
+	  sprite[index] = {
+	    frameset: frameset,
+	    x: y,
+	    y: y
+	  };
+	  return sprite;
 	};
 
-	Sprite.spritesheet = function (spritesheet) {
-	  var frames = spritesheet.frames;
-	  this.scaleVal = 4;
-	  this.frames = _.chain(frames).map(function (frame, i) {
-	        frame.index = i;
-	        return frame;
-	      }).groupBy('name')
-	      .mapValues(function (set) {
-	        return _.map(set, function (frame) {
-	          return frame.index;
-	        });
-	      }).value();
-	  this.scale = {x: this.scaleVal, y: this.scaleVal};
-	  this.tile = spritesheet.meta.tile;
-	  this.tileSize = spritesheet.meta.tile * this.scaleVal;
-	};
+	module.exports = Sprite;
 
-	Sprite.update = function (time) {
-	  this.each(function (sprite) {
-	    sprite.update(time);
-	  });
-	};
-
-	Sprite.toPosition = function (x) { return x * this.tileSize; };
-	Sprite.getFrame = function (frame) {
-	  if (_.isNumber(frame)) return frame;
-	  return _.sample(this.frames[frame]);
-	};
-	Sprite.getTexture = function (frame) { return PIXI.Texture.fromFrame(frame); };
-	Sprite.getLayer = function (layer) { return this.layers[layer]; };
+	// function parseFrames(frames) {
+	//   return _.chain(frames).map(function (frame, i) {
+	//     frame.index = i;
+	//     return frame;
+	//   }).groupBy('name')
+	//   .mapValues(function (set) {
+	//     return _.map(set, function (frame) {
+	//       return frame.index;
+	//     });
+	//   }).value();
+	// }
 
 
 /***/ },
 /* 148 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var _ = __webpack_require__(3);
+	var Entity = __webpack_require__(142);
+	var Dispatcher = __webpack_require__(143);
+
+	// Component Factory
+	// -----------------
+	// @param defaults    default data
+	// @param properties  optional object properties
+	//
+	var Component = function (defaults, properties) {
+	  var entities = {}; // hidden entity map
+	  var pool = []; // pool of destroyed components for re-use
+
+	  var eachAccepted = function (fn) {
+	    var accepted = Object.keys(defaults);
+	    accepted.forEach(fn);
+	  };
+
+	  // Additional functions for registering with entities.
+	  var prototype = {
+	    set: function (data) {
+	      data = data || {};
+	      eachAccepted(function (key) {
+	        if (key in data) {
+	          this[key] = data[key];
+	        } else if (typeof accepted === 'object') {
+	          this[key] = _.cloneDeep(defaults[key]);
+	        }
+	      }.bind(this));
+	      return this;
+	    },
+
+	    register: function (entity) {
+	      Dispatcher.call(this, entity);
+	      entities[entity.id] = this;
+	      this.entity = entity;
+	      if (this.initialize) this.initialize();
+
+	      this.on('destroy', this.destroy);
+	      return this;
+	    },
+
+	    destroy: function () {
+	      this.destroyed = true;
+	    },
+
+	    unregister: function () {
+	      var entity = this.entity;
+	      this.stopListening();
+	      this.entity = null;
+	      entities[entity.id] = null;
+	      pool.push(this);
+	      return this;
+	    },
+
+	    toJSON: function () {
+	      var json = {};
+	      eachAccepted(function (key) {
+	        json[key] = this[key];
+	      }.bind(this));
+	      json.entity = this.entity;
+	      return json;
+	    }
+	  };
+
+	  var ComponentClass = function (data) {
+	    var component;
+	    if (pool.length) {
+	      component = pool.pop();
+	      component.set(data);
+	      return component;
+	    }
+
+	    this.set(data);
+	    return this;
+	  };
+
+	  ComponentClass.prototype = Object.create(
+	    _.extend(prototype, defaults),
+	    properties
+	  );
+
+	  // Static functions
+	  ComponentClass.get = function (eId) {
+	    if (eId === undefined) return entities;
+	    else if (eId instanceof Entity) return entities[eId.id];
+	    else return entities[eId];
+	  };
+
+	  ComponentClass.create = function (data) {
+	    return new this(data);
+	  };
+
+	  ComponentClass.each = function (fn, ctx) {
+	    _.each(this.get(), fn, ctx);
+	  };
+
+	  ComponentClass.filter = function (fn, ctx) {
+	    _.filter(this.get(), fn, ctx);
+	  };
+
+	  ComponentClass.update = function (fn) {
+	    var destroyed = [];
+	    this.each(function (component, i) {
+	      if (component.destroyed) {
+	        destroyed.push(component);
+	        return;
+	      }
+	      if (fn) fn(component, i);
+	    });
+
+	    destroyed.forEach(function (component) {
+	      component.unregister();
+	    });
+	  };
+
+	  return ComponentClass;
+	};
+
+	// @alias Component
+	Component.create = Component;
+
+	module.exports = Component;
+
+
+/***/ },
+/* 149 */
 /***/ function(module, exports) {
 
 	var randInt = module.exports = function (min, max) { return Math.floor(Math.random() * (max - min)) + min; }; // [min, max)
 
 
 /***/ },
-/* 149 */
+/* 150 */
 /***/ function(module, exports) {
 
 	module.exports = {
@@ -46649,6 +46778,97 @@ return /******/ (function(modules) { // webpackBootstrap
 	  water: [20, 80],
 	  nutrients: [60, 100]
 	}
+
+
+/***/ },
+/* 151 */
+/***/ function(module, exports, __webpack_require__) {
+
+	
+	var Sprite = __webpack_require__(147);
+	var PIXI = __webpack_require__(4);
+	var _ = __webpack_require__(3);
+
+	var scaleVal;
+	var scale;
+	var tileSize;
+	var layers;
+	var frames;
+	var pixisprites;
+
+	function setup(stage, spritesheet) {
+	  scaleVal = 4;
+	  scale = {x: scaleVal, y: scaleVal};
+	  tileSize = spritesheet.meta.tile * scaleVal;
+	  layers = [ // 4 layers
+	    new PIXI.Container(), // 0: terrain
+	    new PIXI.Container(), // 1: behind player
+	    new PIXI.Container(), // 2: at player
+	    new PIXI.Container() // 3: in front of player
+	  ];
+	  frames = parseFrames(spritesheet.frames);
+	  pixisprites = [];
+	  _.each(layers, function (layer) { stage.addChild(layer); });
+	}
+
+	function update() {
+	  Sprite.update(function (sprite, i) {
+	    var pixisprite = getPixi(i);
+	    var frameset = getFrame(sprite.frameset);
+	    var texture = PIXI.Texture.fromFrame(frameset);
+	    var x = sprite.x;
+	    var y = sprite.y;
+	    var baselineY = pixisprite.frame ? y + 1 - pixisprite.frame.height / Sprite.tile : y;
+	    var modifiedX = toPosition(x);
+	    var modifiedY = pixisprite ? toPosition(baselineY) : toPosition(y);
+	    var layer = getLayer(sprite.layer);
+
+	    if (pixisprite.parent) {
+	      pixisprite.parent.removeChild(pixisprite);
+	    }
+	    layer.addChild(pixisprite);
+	    pixisprite.position.set(modifiedX, modifiedY);
+	    pixisprite.texture = texture;
+	  });
+	}
+
+	function parseFrames(frames) {
+	  return _.chain(frames).map(function (frame, i) {
+	    frame.index = i;
+	    return frame;
+	  }).groupBy('name')
+	  .mapValues(function (set) {
+	    return _.map(set, function (frame) {
+	      return frame.index;
+	    });
+	  }).value();
+	}
+
+	function getPixi(i) {
+	  if (!pixisprites[i]) {
+	    pixisprites[i] = new PIXI.Sprite(PIXI.Texture.fromFrame(0));
+	    pixisprites[i].scale = scale;
+	  }
+	  return pixisprites[i];
+	}
+
+	function toPosition(x) {
+	  return x * tileSize;
+	}
+
+	function getFrame(frame) {
+	  if (_.isNumber(frame)) return frame;
+	  return _.sample(frames[frame]);
+	}
+
+	function getLayer(layer) {
+	  return layers[layer];
+	}
+
+	module.exports = {
+	  setup: setup,
+	  update: update
+	};
 
 
 /***/ }

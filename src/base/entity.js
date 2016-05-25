@@ -12,6 +12,9 @@ function Entity (components) {
   return this;
 }
 
-Entity.prototype.destroy = function () { this.emit('destroy'); }
+Entity.prototype.destroy = function () {
+  this.destroyed = true;
+  this.emit('destroy');
+};
 
 if (module && module.exports) module.exports = Entity;

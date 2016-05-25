@@ -15,15 +15,16 @@ var Gatherer = {}; // globally accessible
   // var Hunger          = this.Hunger         = require('./modules/components/hunger.js');
   // var Inventory       = this.Inventory      = require('./modules/components/inventory.js');
   // var PlantGenerator  = this.PlantGenerator = require('./modules/components/plantgen.js');
-  var Sprite          = this.Sprite         = require('./components/sprite/sprite.js');
+  this.Sprite = require('./components/sprite.js');
   // var Traits          = this.Traits         = require('./modules/traits/traits.js');
   // var Useable         = this.Useable        = require('./modules/components/useable.js');
+  var SpriteSystem = require('./systems/sprite.js');
 
   // setup game
   var options =  {
     assets: ['assets/sprites.json'],
-    ready: function (loader, resources) {
-      Sprite.spritesheet(resources['assets/sprites.json'].data);
+    ready: function (game, loader, resources) {
+      SpriteSystem.setup(game.stage, resources['assets/sprites.json'].data);
       Terrain.generate(12, 12);
       // TODO: better interactions setup
       // var actions = new Actions(),
@@ -46,8 +47,6 @@ var Gatherer = {}; // globally accessible
   var initialize = function () {
     var game = new Game(options);
 
-    Sprite.initialize(game.stage);
-
     // updates in update loop
     // game.registerUpdate(Health.update.bind(Health));
     // game.registerUpdate(Hunger.update.bind(Hunger));
@@ -55,7 +54,7 @@ var Gatherer = {}; // globally accessible
     // game.registerUpdate(Effects.update.bind(Effects));
 
     // updates in render loop
-    game.registerRender(Sprite.update.bind(Sprite));
+    game.registerRender(SpriteSystem.update);
 
     var view = game.start();
     document.body.appendChild(view);

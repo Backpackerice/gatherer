@@ -33,7 +33,7 @@ Game.prototype = {
 
   onReady: function (loader, resources) {
     GameTime.start();
-    this.ready(loader, resources);
+    this.ready(this, loader, resources);
     this.loop();
   },
 
