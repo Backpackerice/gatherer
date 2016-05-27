@@ -54,34 +54,28 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 0 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var Gatherer = {}; // globally accessible
-	(function () {
-	  // require base
-	  var Game = __webpack_require__(1);
-	  // var Entity = require('./modules/base/entity.js');
-	  // var Component = require('./modules/base/component.js');
+	var Gatherer = {};
+	var Game = __webpack_require__(1);
 
-	  // Expose all components
-	  // var Consummable     = this.Consummable    = require('./modules/consummable/consummable.js');
-	  // var Effects         = this.Effects        = require('./modules/effects/effects.js');
-	  var Terrain         = this.Terrain        = __webpack_require__(140);
-	  // var Genome          = this.Genome         = require('./modules/genome/genome.js');
-	  // var Growth          = this.Growth         = require('./modules/components/growth.js');
-	  // var Health          = this.Health         = require('./modules/components/health.js');
-	  // var Hunger          = this.Hunger         = require('./modules/components/hunger.js');
-	  // var Inventory       = this.Inventory      = require('./modules/components/inventory.js');
-	  // var PlantGenerator  = this.PlantGenerator = require('./modules/components/plantgen.js');
-	  this.Sprite = __webpack_require__(147);
-	  // var Traits          = this.Traits         = require('./modules/traits/traits.js');
-	  // var Useable         = this.Useable        = require('./modules/components/useable.js');
-	  var SpriteSystem = __webpack_require__(151);
+	// Systems
+	var SpriteSystem = __webpack_require__(140);
+	var TerrainSystem = __webpack_require__(145);
 
-	  // setup game
-	  var options =  {
+	// Generators
+	var map = __webpack_require__(150);
+
+	var game;
+	var registerComponent = function (name, component) {
+	  Gatherer[name] = component;
+	  game.registerUpdate(component.cleanup.bind(component));
+	};
+
+	Gatherer.start = function () {
+	  game = new Game({
 	    assets: ['assets/sprites.json'],
 	    ready: function (game, loader, resources) {
 	      SpriteSystem.setup(game.stage, resources['assets/sprites.json'].data);
-	      Terrain.generate(12, 12);
+	      map(12, 12);
 	      // TODO: better interactions setup
 	      // var actions = new Actions(),
 	      //     player = new Entity([actions, new Hunger(), new Health()]),
@@ -98,26 +92,24 @@ return /******/ (function(modules) { // webpackBootstrap
 	      //   });
 	      // });
 	    }
-	  };
+	  });
 
-	  var initialize = function () {
-	    var game = new Game(options);
+	  // updates in update loop
+	  // game.registerUpdate(Health.update.bind(Health));
+	  // game.registerUpdate(Hunger.update.bind(Hunger));
+	  // game.registerUpdate(Growth.update.bind(Growth));
+	  game.registerUpdate(TerrainSystem.update);
 
-	    // updates in update loop
-	    // game.registerUpdate(Health.update.bind(Health));
-	    // game.registerUpdate(Hunger.update.bind(Hunger));
-	    // game.registerUpdate(Growth.update.bind(Growth));
-	    // game.registerUpdate(Effects.update.bind(Effects));
+	  // updates in render loop
+	  game.registerRender(SpriteSystem.update);
 
-	    // updates in render loop
-	    game.registerRender(SpriteSystem.update);
+	  // Other component updates.
+	  registerComponent('Terrain', __webpack_require__(146));
+	  registerComponent('Sprite',  __webpack_require__(141));
 
-	    var view = game.start();
-	    document.body.appendChild(view);
-	  };
-
-	  window.onload = initialize;
-	}).call(Gatherer);
+	  var view = game.start();
+	  document.body.appendChild(view);
+	};
 
 	module.exports = Gatherer;
 
@@ -46267,31 +46259,428 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 140 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var _ = __webpack_require__(3),
-	    Component = __webpack_require__(141);
+	
+	var Sprite = __webpack_require__(141);
+	var PIXI = __webpack_require__(4);
+	var _ = __webpack_require__(3);
 
-	var pairing = __webpack_require__(144);
+	var scaleVal;
+	var scale;
+	var tileSize;
+	var layers;
+	var frames;
+	var pixisprites;
 
-	var Terrain = module.exports = new Component({
-	  constructor: function (water, nutrients) {
-	    if (_.isUndefined(water)) this.water = water || Math.random();
-	    if (_.isUndefined(nutrients)) this.nutrients = nutrients || Math.random();
-	    this.light = Math.random();
-	    return this;
+	function setup(stage, spritesheet) {
+	  scaleVal = 4;
+	  scale = {x: scaleVal, y: scaleVal};
+	  tileSize = spritesheet.meta.tile * scaleVal;
+	  layers = [ // 4 layers
+	    new PIXI.Container(), // 0: terrain
+	    new PIXI.Container(), // 1: behind player
+	    new PIXI.Container(), // 2: at player
+	    new PIXI.Container() // 3: in front of player
+	  ];
+	  frames = parseFrames(spritesheet.frames);
+	  pixisprites = [];
+	  _.each(layers, function (layer) { stage.addChild(layer); });
+	}
+
+	function update() {
+	  Sprite.each(function (sprite, i) {
+	    // TODO: deal with subsprites
+	    var pixisprite = getPixi(i);
+	    var frameset = getFrame(sprite.frameset);
+	    var texture = PIXI.Texture.fromFrame(frameset);
+	    var x = sprite.x;
+	    var y = sprite.y;
+	    var baselineY = pixisprite.frame ? y + 1 - pixisprite.frame.height / Sprite.tile : y;
+	    var modifiedX = toPosition(x);
+	    var modifiedY = pixisprite ? toPosition(baselineY) : toPosition(y);
+	    var layer = getLayer(sprite.layer);
+
+	    if (sprite.entity.destroyed) {
+	      pixisprite.parent.removeChild(pixisprite);
+	      return;
+	    }
+
+	    if (pixisprite.parent) {
+	      pixisprite.parent.removeChild(pixisprite);
+	    }
+	    layer.addChild(pixisprite);
+	    pixisprite.position.set(modifiedX, modifiedY);
+	    pixisprite.texture = texture;
+	  });
+	}
+
+	function parseFrames(frames) {
+	  return _.chain(frames).map(function (frame, i) {
+	    frame.index = i;
+	    return frame;
+	  }).groupBy('name')
+	  .mapValues(function (set) {
+	    return _.map(set, function (frame) {
+	      return frame.index;
+	    });
+	  }).value();
+	}
+
+	function getPixi(i) {
+	  if (!pixisprites[i]) {
+	    pixisprites[i] = new PIXI.Sprite(PIXI.Texture.fromFrame(0));
+	    pixisprites[i].scale = scale;
 	  }
-	});
+	  return pixisprites[i];
+	}
 
-	Terrain.tiles = {};
-	Terrain.generate = __webpack_require__(145);
-	Terrain.getAtXY = function (x, y) { return this.tiles[pairing(x, y)]; };
+	function toPosition(x) {
+	  return x * tileSize;
+	}
+
+	function getFrame(frame) {
+	  if (_.isNumber(frame)) return frame;
+	  return _.sample(frames[frame]);
+	}
+
+	function getLayer(layer) {
+	  return layers[layer];
+	}
+
+	module.exports = {
+	  setup: setup,
+	  update: update
+	};
+
 
 /***/ },
 /* 141 */
 /***/ function(module, exports, __webpack_require__) {
 
+	
+	var Component = __webpack_require__(142);
+
+	var Sprite = new Component({
+	  frameset: null,
+	  layer: null,
+	  subsprites: [],
+	  x: 0, // grid positions
+	  y: 0
+	});
+
+	Sprite.addSubsprite = function (sprite, frameset, x, y, index) {
+	  sprite[index] = {
+	    frameset: frameset,
+	    x: y,
+	    y: y
+	  };
+	  return sprite;
+	};
+
+	module.exports = Sprite;
+
+
+/***/ },
+/* 142 */
+/***/ function(module, exports, __webpack_require__) {
+
 	var _ = __webpack_require__(3);
-	var Entity = __webpack_require__(142);
-	var Dispatcher = __webpack_require__(143);
+	var Entity = __webpack_require__(143);
+	var Dispatcher = __webpack_require__(144);
+
+	// Component Factory
+	// -----------------
+	// @param defaults    default data
+	// @param properties  optional object properties
+	//
+	var Component = function (defaults, properties) {
+	  var entities = {}; // hidden entity map
+	  var pool = []; // pool of destroyed components for re-use
+
+	  var eachAccepted = function (fn) {
+	    var accepted = Object.keys(defaults);
+	    accepted.forEach(fn);
+	  };
+
+	  // Additional functions for registering with entities.
+	  var prototype = {
+	    set: function (data) {
+	      data = data || {};
+	      eachAccepted(function (key) {
+	        if (key in data) {
+	          this[key] = data[key];
+	        } else if (typeof accepted === 'object') {
+	          this[key] = _.cloneDeep(defaults[key]);
+	        }
+	      }.bind(this));
+	      return this;
+	    },
+
+	    register: function (entity) {
+	      Dispatcher.call(this, entity);
+	      entities[entity.id] = this;
+	      this.entity = entity;
+	      if (this.initialize) this.initialize();
+
+	      return this;
+	    },
+
+	    unregister: function () {
+	      var entity = this.entity;
+	      this.stopListening();
+	      this.entity = null;
+	      entities[entity.id] = null;
+	      pool.push(this);
+	      return this;
+	    },
+
+	    toJSON: function () {
+	      var json = {};
+	      eachAccepted(function (key) {
+	        json[key] = this[key];
+	      }.bind(this));
+	      json.entity = this.entity;
+	      return json;
+	    }
+	  };
+
+	  var ComponentClass = function (data) {
+	    var component;
+	    if (pool.length) {
+	      component = pool.pop();
+	      component.set(data);
+	      return component;
+	    }
+
+	    this.set(data);
+	    return this;
+	  };
+
+	  ComponentClass.prototype = Object.create(
+	    _.extend(prototype, defaults),
+	    properties
+	  );
+
+	  // Static functions
+	  ComponentClass.get = function (eId) {
+	    if (eId === undefined) return entities;
+	    else if (eId instanceof Entity) return entities[eId.id];
+	    else return entities[eId];
+	  };
+
+	  ComponentClass.create = function (data) {
+	    return new this(data);
+	  };
+
+	  ComponentClass.each = function (fn, ctx) {
+	    _.each(this.get(), fn, ctx);
+	  };
+
+	  ComponentClass.filter = function (fn, ctx) {
+	    _.filter(this.get(), fn, ctx);
+	  };
+
+	  ComponentClass.cleanup = function () {
+	    this.each(function (component) {
+	      if (component.entity.destroyed) {
+	        component.unregister();
+	        return;
+	      }
+	    });
+	  };
+
+	  return ComponentClass;
+	};
+
+	// @alias Component
+	Component.create = Component;
+
+	module.exports = Component;
+
+
+/***/ },
+/* 143 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/* WEBPACK VAR INJECTION */(function(module) {var _ = __webpack_require__(3),
+	    Dispatcher = __webpack_require__(144);
+
+	function Entity (components) {
+	  Dispatcher.call(this);
+	  this.id = _.uniqueId('e');
+
+	  _.each(components, function (component) {
+	    component.register(this);
+	  }.bind(this));
+
+	  return this;
+	}
+
+	Entity.prototype.destroy = function () {
+	  this.destroyed = true;
+	  this.emit('destroy');
+	};
+
+	if (module && module.exports) module.exports = Entity;
+
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(2)(module)))
+
+/***/ },
+/* 144 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/* WEBPACK VAR INJECTION */(function(module) {var _ = __webpack_require__(3);
+
+	function Dispatcher (target) {
+	  var dispatcher = {};
+
+	  this.on = target ? target.on : function (triggers, fn) {
+	    triggers = triggers instanceof Array ? _.uniq(triggers) : [triggers];
+	    _.each(triggers, function (t) {
+	      if (dispatcher[t] === undefined) dispatcher[t] = [];
+	      if (dispatcher[t].indexOf(fn) === -1) dispatcher[t].push(fn);
+	    });
+	  };
+	  this.off = target ? target.off : function (triggers, fn) {
+	    triggers = triggers instanceof Array ? _.uniq(triggers) : [triggers];
+	    _.each(triggers, function (t) {
+	      if (!dispatcher[t]) return;
+	      if (fn) {
+	        var index = dispatcher[t].indexOf(fn);
+	        if (index > -1) dispatcher[t].splice(index, 1);
+	      } else {
+	        dispatcher[t] = []; // clear all
+	      }
+	    });
+	  };
+	  this.emit = target ? target.emit : function (triggers, data) {
+	    triggers = triggers instanceof Array ? _.uniq(triggers) : [triggers];
+	    _.each(triggers, function (t) {
+	        if (!dispatcher[t]) return;
+	        _.each(dispatcher[t], function (fn) { fn(data); });
+	    });
+	  };
+
+	  this.stopListening = function () {
+	    this.on = _.noop;
+	    this.off = _.noop;
+	    this.emit = _.noop;
+	  }
+	}
+
+	if (module && module.exports) module.exports = Dispatcher;
+
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(2)(module)))
+
+/***/ },
+/* 145 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var Terrain = __webpack_require__(146);
+	var Position = __webpack_require__(147);
+	var pairing = __webpack_require__(149);
+	var tiles = {};
+
+	function update() {
+	  Terrain.each(function (terrain) {
+	    var entity = terrain.entity;
+	    var position = Position.get(entity.id);
+	    if (entity.destroyed) {
+	      // TODO: cleanup
+	      return;
+	    }
+	    var x = position.x;
+	    var y = position.y;
+	    if (!position) return;
+
+	    var pos = pairing(x, y);
+	    if (tiles[pos] !== entity) {
+	      tiles[pos] = entity;
+	    }
+	  });
+	}
+
+	function get(x, y) {
+	  return tiles[pairing(x, y)];
+	}
+
+	module.exports = {
+	  update: update,
+	  get: get
+	};
+
+
+/***/ },
+/* 146 */
+/***/ function(module, exports, __webpack_require__) {
+
+	//var _ = require('lodash');
+	var Component = __webpack_require__(142);
+
+	var Terrain = new Component({
+	  water: 0,
+	  nutrients: 0,
+	  light: 0
+	});
+
+	module.exports = Terrain;
+
+
+/***/ },
+/* 147 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var _ = __webpack_require__(3),
+	    Component = __webpack_require__(148);
+
+	var Position = module.exports = new Component({
+	  constructor: function Position (x, y, duration) {
+	    this.x = _.isUndefined(x) ? -1 : x;
+	    this.y = _.isUndefined(y) ? -1 : y;
+	    this.duration = duration || 0;
+	    this.move(x, y, duration);
+	    this.lastTick = null;
+	    return this;
+	  },
+
+	  move: function (x, y, duration) {
+	    this.x = x;
+	    this.y = y;
+	    this.duration = duration;
+	    if (this.entity) this.emit('position:moveStart', this);
+	    return this;
+	  },
+
+	  tick: function (gametime) {
+	    var time = gametime.realtime;
+	    if (this.duration > 0) {
+	      if (!this.lastTick) this.lastTick = gametime;
+	      this.duration = this.duration - (gametime.realtime - this.lastTick.realtime);
+	      if (this.duration <= 0) this.emit('position:move', this);
+	      this.lastTick = gametime;
+	    } else if (this.lastTick !== null) this.lastTick = null;
+	    return this;
+	  }
+	});
+
+	Position.update = function (time) {
+	  var positions = this.get();
+	  for (var i = 0; i < positions.length; i++) { positions[i].tick(time); }
+	};
+
+	Position.find = function (x, y) {
+	  this.filter(function (position) {
+	    return position.x === x && position.y === y;
+	  });
+	};
+
+
+/***/ },
+/* 148 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var _ = __webpack_require__(3);
+	var Entity = __webpack_require__(143);
+	var Dispatcher = __webpack_require__(144);
 
 	var Component = module.exports = function (prototype) {
 	  var entities = {}; // hidden entity map
@@ -46357,81 +46746,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 142 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/* WEBPACK VAR INJECTION */(function(module) {var _ = __webpack_require__(3),
-	    Dispatcher = __webpack_require__(143);
-
-	function Entity (components) {
-	  Dispatcher.call(this);
-	  this.id = _.uniqueId('e');
-
-	  _.each(components, function (component) {
-	    component.register(this);
-	  }.bind(this));
-
-	  return this;
-	}
-
-	Entity.prototype.destroy = function () {
-	  this.destroyed = true;
-	  this.emit('destroy');
-	};
-
-	if (module && module.exports) module.exports = Entity;
-
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(2)(module)))
-
-/***/ },
-/* 143 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/* WEBPACK VAR INJECTION */(function(module) {var _ = __webpack_require__(3);
-
-	function Dispatcher (target) {
-	  var dispatcher = {};
-
-	  this.on = target ? target.on : function (triggers, fn) {
-	    triggers = triggers instanceof Array ? _.uniq(triggers) : [triggers];
-	    _.each(triggers, function (t) {
-	      if (dispatcher[t] === undefined) dispatcher[t] = [];
-	      if (dispatcher[t].indexOf(fn) === -1) dispatcher[t].push(fn);
-	    });
-	  };
-	  this.off = target ? target.off : function (triggers, fn) {
-	    triggers = triggers instanceof Array ? _.uniq(triggers) : [triggers];
-	    _.each(triggers, function (t) {
-	      if (!dispatcher[t]) return;
-	      if (fn) {
-	        var index = dispatcher[t].indexOf(fn);
-	        if (index > -1) dispatcher[t].splice(index, 1);
-	      } else {
-	        dispatcher[t] = []; // clear all
-	      }
-	    });
-	  };
-	  this.emit = target ? target.emit : function (triggers, data) {
-	    triggers = triggers instanceof Array ? _.uniq(triggers) : [triggers];
-	    _.each(triggers, function (t) {
-	        if (!dispatcher[t]) return;
-	        _.each(dispatcher[t], function (fn) { fn(data); });
-	    });
-	  };
-
-	  this.stopListening = function () {
-	    this.on = _.noop;
-	    this.off = _.noop;
-	    this.emit = _.noop;
-	  }
-	}
-
-	if (module && module.exports) module.exports = Dispatcher;
-
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(2)(module)))
-
-/***/ },
-/* 144 */
+/* 149 */
 /***/ function(module, exports) {
 
 	// from http://sachiniscool.blogspot.com/2011/06/cantor-pairing-function-and-reversal.html
@@ -46439,436 +46754,51 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 145 */
+/* 150 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var Entity = __webpack_require__(142);
-	var Position = __webpack_require__(146);
-	var Sprite = __webpack_require__(147);
-	var randInt = __webpack_require__(149);
-	var pairing = __webpack_require__(144);
+	var Entity = __webpack_require__(143);
+	var Terrain = __webpack_require__(146);
+	var Position = __webpack_require__(147);
+	var Sprite = __webpack_require__(141);
+	var randInt = __webpack_require__(151);
 
-	// terrain types to randomly generate
-	var soil = __webpack_require__(150);
-
-	module.exports = function (cols, rows) {
+	function map(cols, rows) {
 	  for (var x = 0; x < cols; x++) {
 	    for (var y = 0; y < rows; y++) {
 	      var type = soil, // always soil for now
 	          water = randInt(type.water[0], type.water[1]),
 	          nutrients = randInt(type.nutrients[0], type.nutrients[1]);
 
-	      var e = new Entity();
-	      this.create(water, nutrients).register(e);
-	      Position.create(x, y).register(e);
+	      var entity = new Entity();
+	      Terrain.create({water: water, nutrients: nutrients}).register(entity);
+	      Position.create(x, y).register(entity);
 	      Sprite.create({
 	        layer: 0,
 	        x: x,
 	        y: y,
 	        frameset: type.frameSet
-	      }).register(e);
-
-	      this.tiles[pairing(x, y)] = e;
+	      }).register(entity);
 	    }
 	  }
-	  return this;
-	};
+	  return entity;
+	}
 
-/***/ },
-/* 146 */
-/***/ function(module, exports, __webpack_require__) {
+	module.exports = map;
 
-	var _ = __webpack_require__(3),
-	    Component = __webpack_require__(141);
-
-	var Position = module.exports = new Component({
-	  constructor: function Position (x, y, duration) {
-	    this.x = _.isUndefined(x) ? -1 : x;
-	    this.y = _.isUndefined(y) ? -1 : y;
-	    this.duration = duration || 0;
-	    this.move(x, y, duration);
-	    this.lastTick = null;
-	    return this;
-	  },
-
-	  move: function (x, y, duration) {
-	    this.x = x;
-	    this.y = y;
-	    this.duration = duration;
-	    if (this.entity) this.emit('position:moveStart', this);
-	    return this;
-	  },
-
-	  tick: function (gametime) {
-	    var time = gametime.realtime;
-	    if (this.duration > 0) {
-	      if (!this.lastTick) this.lastTick = gametime;
-	      this.duration = this.duration - (gametime.realtime - this.lastTick.realtime);
-	      if (this.duration <= 0) this.emit('position:move', this);
-	      this.lastTick = gametime;
-	    } else if (this.lastTick !== null) this.lastTick = null;
-	    return this;
-	  }
-	});
-
-	Position.update = function (time) {
-	  var positions = this.get();
-	  for (var i = 0; i < positions.length; i++) { positions[i].tick(time); }
-	};
-
-	Position.find = function (x, y) {
-	  this.filter(function (position) {
-	    return position.x === x && position.y === y;
-	  });
-	};
-
-
-/***/ },
-/* 147 */
-/***/ function(module, exports, __webpack_require__) {
-
-	// // var PIXI = require('pixi.js');
-	// var _ = require('lodash');
-	var Component = __webpack_require__(148);
-
-	var Sprite = new Component({
-	  frameset: null,
-	  layer: null,
-	  subsprites: [],
-	  parent: null,
-	  x: 0, // grid positions
-	  y: 0
-	});
-
-	// Sprite.setup = function (stage, spritesheet) {
-	//   this.scaleVal = 4;
-	//   this.scale = {x: this.scaleVal, y: this.scaleVal};
-	//   this.tile = spritesheet.meta.tile;
-	//   this.tileSize = spritesheet.meta.tile * this.scaleVal;
-	//   this.layers = [ // 4 layers
-	//     new PIXI.Container(), // 0: terrain
-	//     new PIXI.Container(), // 1: behind player
-	//     new PIXI.Container(), // 2: at player
-	//     new PIXI.Container() // 3: in front of player
-	//   ];
-	//   this.frames = parseFrames(spritesheet.frames);
-	//   this.pixisprites = [];
-	//   _.each(this.layers, function (layer) { stage.addChild(layer); });
-	//   return this;
-	// };
-
-	// Sprite.update = function () {
-	//   var destroyed = [];
-	//   this.each(function (sprite, i) {
-	//     if (sprite.destroyed) {
-	//       destroyed.push(sprite);
-	//       return;
-	//     }
-
-	//     var pixisprite = Sprite.getPixi(i);
-	//     var frameset = Sprite.getFrame(sprite.frameset);
-	//     var texture = PIXI.Texture.fromFrame(frameset);
-	//     var x = sprite.x;
-	//     var y = sprite.y;
-	//     var baselineY = pixisprite.frame ? y + 1 - pixisprite.frame.height / Sprite.tile : y;
-	//     var modifiedX = Sprite.toPosition(x);
-	//     var modifiedY = pixisprite ? Sprite.toPosition(baselineY) : Sprite.toPosition(y);
-	//     var layer = Sprite.getLayer(sprite.layer);
-
-	//     if (pixisprite.parent) {
-	//       pixisprite.parent.removeChild(pixisprite);
-	//     }
-	//     layer.addChild(pixisprite);
-	//     pixisprite.position.set(modifiedX, modifiedY);
-	//     pixisprite.texture = texture;
-	//   });
-
-	//   destroyed.forEach(function (sprite) {
-	//     sprite.unregister();
-	//   });
-	// };
-
-	// Sprite.getPixi = function (i) {
-	//   if (!this.pixisprites[i]) {
-	//     this.pixisprites[i] = new PIXI.Sprite(PIXI.Texture.fromFrame(0));
-	//     this.pixisprites[i].scale = this.scale;
-	//   }
-	//   return this.pixisprites[i];
-	// };
-
-	// Sprite.toPosition = function (x) {
-	//   return x * this.tileSize;
-	// };
-
-	// Sprite.getFrame = function (frame) {
-	//   if (_.isNumber(frame)) return frame;
-	//   return _.sample(this.frames[frame]);
-	// };
-
-	// Sprite.getLayer = function (layer) {
-	//   return this.layers[layer];
-	// };
-
-	Sprite.addSubsprite = function (sprite, frameset, x, y, index) {
-	  sprite[index] = {
-	    frameset: frameset,
-	    x: y,
-	    y: y
-	  };
-	  return sprite;
-	};
-
-	module.exports = Sprite;
-
-	// function parseFrames(frames) {
-	//   return _.chain(frames).map(function (frame, i) {
-	//     frame.index = i;
-	//     return frame;
-	//   }).groupBy('name')
-	//   .mapValues(function (set) {
-	//     return _.map(set, function (frame) {
-	//       return frame.index;
-	//     });
-	//   }).value();
-	// }
-
-
-/***/ },
-/* 148 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var _ = __webpack_require__(3);
-	var Entity = __webpack_require__(142);
-	var Dispatcher = __webpack_require__(143);
-
-	// Component Factory
-	// -----------------
-	// @param defaults    default data
-	// @param properties  optional object properties
-	//
-	var Component = function (defaults, properties) {
-	  var entities = {}; // hidden entity map
-	  var pool = []; // pool of destroyed components for re-use
-
-	  var eachAccepted = function (fn) {
-	    var accepted = Object.keys(defaults);
-	    accepted.forEach(fn);
-	  };
-
-	  // Additional functions for registering with entities.
-	  var prototype = {
-	    set: function (data) {
-	      data = data || {};
-	      eachAccepted(function (key) {
-	        if (key in data) {
-	          this[key] = data[key];
-	        } else if (typeof accepted === 'object') {
-	          this[key] = _.cloneDeep(defaults[key]);
-	        }
-	      }.bind(this));
-	      return this;
-	    },
-
-	    register: function (entity) {
-	      Dispatcher.call(this, entity);
-	      entities[entity.id] = this;
-	      this.entity = entity;
-	      if (this.initialize) this.initialize();
-
-	      this.on('destroy', this.destroy);
-	      return this;
-	    },
-
-	    destroy: function () {
-	      this.destroyed = true;
-	    },
-
-	    unregister: function () {
-	      var entity = this.entity;
-	      this.stopListening();
-	      this.entity = null;
-	      entities[entity.id] = null;
-	      pool.push(this);
-	      return this;
-	    },
-
-	    toJSON: function () {
-	      var json = {};
-	      eachAccepted(function (key) {
-	        json[key] = this[key];
-	      }.bind(this));
-	      json.entity = this.entity;
-	      return json;
-	    }
-	  };
-
-	  var ComponentClass = function (data) {
-	    var component;
-	    if (pool.length) {
-	      component = pool.pop();
-	      component.set(data);
-	      return component;
-	    }
-
-	    this.set(data);
-	    return this;
-	  };
-
-	  ComponentClass.prototype = Object.create(
-	    _.extend(prototype, defaults),
-	    properties
-	  );
-
-	  // Static functions
-	  ComponentClass.get = function (eId) {
-	    if (eId === undefined) return entities;
-	    else if (eId instanceof Entity) return entities[eId.id];
-	    else return entities[eId];
-	  };
-
-	  ComponentClass.create = function (data) {
-	    return new this(data);
-	  };
-
-	  ComponentClass.each = function (fn, ctx) {
-	    _.each(this.get(), fn, ctx);
-	  };
-
-	  ComponentClass.filter = function (fn, ctx) {
-	    _.filter(this.get(), fn, ctx);
-	  };
-
-	  ComponentClass.update = function (fn) {
-	    var destroyed = [];
-	    this.each(function (component, i) {
-	      if (component.destroyed) {
-	        destroyed.push(component);
-	        return;
-	      }
-	      if (fn) fn(component, i);
-	    });
-
-	    destroyed.forEach(function (component) {
-	      component.unregister();
-	    });
-	  };
-
-	  return ComponentClass;
-	};
-
-	// @alias Component
-	Component.create = Component;
-
-	module.exports = Component;
-
-
-/***/ },
-/* 149 */
-/***/ function(module, exports) {
-
-	var randInt = module.exports = function (min, max) { return Math.floor(Math.random() * (max - min)) + min; }; // [min, max)
-
-
-/***/ },
-/* 150 */
-/***/ function(module, exports) {
-
-	module.exports = {
+	// terrain types to randomly generate
+	var soil = {
 	  frameSet: 'tile-soil',
 	  water: [20, 80],
 	  nutrients: [60, 100]
-	}
+	};
 
 
 /***/ },
 /* 151 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
-	
-	var Sprite = __webpack_require__(147);
-	var PIXI = __webpack_require__(4);
-	var _ = __webpack_require__(3);
-
-	var scaleVal;
-	var scale;
-	var tileSize;
-	var layers;
-	var frames;
-	var pixisprites;
-
-	function setup(stage, spritesheet) {
-	  scaleVal = 4;
-	  scale = {x: scaleVal, y: scaleVal};
-	  tileSize = spritesheet.meta.tile * scaleVal;
-	  layers = [ // 4 layers
-	    new PIXI.Container(), // 0: terrain
-	    new PIXI.Container(), // 1: behind player
-	    new PIXI.Container(), // 2: at player
-	    new PIXI.Container() // 3: in front of player
-	  ];
-	  frames = parseFrames(spritesheet.frames);
-	  pixisprites = [];
-	  _.each(layers, function (layer) { stage.addChild(layer); });
-	}
-
-	function update() {
-	  Sprite.update(function (sprite, i) {
-	    var pixisprite = getPixi(i);
-	    var frameset = getFrame(sprite.frameset);
-	    var texture = PIXI.Texture.fromFrame(frameset);
-	    var x = sprite.x;
-	    var y = sprite.y;
-	    var baselineY = pixisprite.frame ? y + 1 - pixisprite.frame.height / Sprite.tile : y;
-	    var modifiedX = toPosition(x);
-	    var modifiedY = pixisprite ? toPosition(baselineY) : toPosition(y);
-	    var layer = getLayer(sprite.layer);
-
-	    if (pixisprite.parent) {
-	      pixisprite.parent.removeChild(pixisprite);
-	    }
-	    layer.addChild(pixisprite);
-	    pixisprite.position.set(modifiedX, modifiedY);
-	    pixisprite.texture = texture;
-	  });
-	}
-
-	function parseFrames(frames) {
-	  return _.chain(frames).map(function (frame, i) {
-	    frame.index = i;
-	    return frame;
-	  }).groupBy('name')
-	  .mapValues(function (set) {
-	    return _.map(set, function (frame) {
-	      return frame.index;
-	    });
-	  }).value();
-	}
-
-	function getPixi(i) {
-	  if (!pixisprites[i]) {
-	    pixisprites[i] = new PIXI.Sprite(PIXI.Texture.fromFrame(0));
-	    pixisprites[i].scale = scale;
-	  }
-	  return pixisprites[i];
-	}
-
-	function toPosition(x) {
-	  return x * tileSize;
-	}
-
-	function getFrame(frame) {
-	  if (_.isNumber(frame)) return frame;
-	  return _.sample(frames[frame]);
-	}
-
-	function getLayer(layer) {
-	  return layers[layer];
-	}
-
-	module.exports = {
-	  setup: setup,
-	  update: update
-	};
+	var randInt = module.exports = function (min, max) { return Math.floor(Math.random() * (max - min)) + min; }; // [min, max)
 
 
 /***/ }

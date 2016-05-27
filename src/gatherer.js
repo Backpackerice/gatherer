@@ -1,31 +1,25 @@
-var Gatherer = {}; // globally accessible
-(function () {
-  // require base
-  var Game = require('./base/game.js');
-  // var Entity = require('./modules/base/entity.js');
-  // var Component = require('./modules/base/component.js');
+var Gatherer = {};
+var Game = require('./base/game.js');
 
-  // Expose all components
-  // var Consummable     = this.Consummable    = require('./modules/consummable/consummable.js');
-  // var Effects         = this.Effects        = require('./modules/effects/effects.js');
-  var Terrain         = this.Terrain        = require('./components/terrain/terrain.js');
-  // var Genome          = this.Genome         = require('./modules/genome/genome.js');
-  // var Growth          = this.Growth         = require('./modules/components/growth.js');
-  // var Health          = this.Health         = require('./modules/components/health.js');
-  // var Hunger          = this.Hunger         = require('./modules/components/hunger.js');
-  // var Inventory       = this.Inventory      = require('./modules/components/inventory.js');
-  // var PlantGenerator  = this.PlantGenerator = require('./modules/components/plantgen.js');
-  this.Sprite = require('./components/sprite.js');
-  // var Traits          = this.Traits         = require('./modules/traits/traits.js');
-  // var Useable         = this.Useable        = require('./modules/components/useable.js');
-  var SpriteSystem = require('./systems/sprite.js');
+// Systems
+var SpriteSystem = require('./systems/sprite.js');
+var TerrainSystem = require('./systems/terrain.js');
 
-  // setup game
-  var options =  {
+// Generators
+var map = require('./entities/map.js');
+
+var game;
+var registerComponent = function (name, component) {
+  Gatherer[name] = component;
+  game.registerUpdate(component.cleanup.bind(component));
+};
+
+Gatherer.start = function () {
+  game = new Game({
     assets: ['assets/sprites.json'],
     ready: function (game, loader, resources) {
       SpriteSystem.setup(game.stage, resources['assets/sprites.json'].data);
-      Terrain.generate(12, 12);
+      map(12, 12);
       // TODO: better interactions setup
       // var actions = new Actions(),
       //     player = new Entity([actions, new Hunger(), new Health()]),
@@ -42,25 +36,23 @@ var Gatherer = {}; // globally accessible
       //   });
       // });
     }
-  };
+  });
 
-  var initialize = function () {
-    var game = new Game(options);
+  // updates in update loop
+  // game.registerUpdate(Health.update.bind(Health));
+  // game.registerUpdate(Hunger.update.bind(Hunger));
+  // game.registerUpdate(Growth.update.bind(Growth));
+  game.registerUpdate(TerrainSystem.update);
 
-    // updates in update loop
-    // game.registerUpdate(Health.update.bind(Health));
-    // game.registerUpdate(Hunger.update.bind(Hunger));
-    // game.registerUpdate(Growth.update.bind(Growth));
-    // game.registerUpdate(Effects.update.bind(Effects));
+  // updates in render loop
+  game.registerRender(SpriteSystem.update);
 
-    // updates in render loop
-    game.registerRender(SpriteSystem.update);
+  // Other component updates.
+  registerComponent('Terrain', require('./components/terrain.js'));
+  registerComponent('Sprite',  require('./components/sprite.js'));
 
-    var view = game.start();
-    document.body.appendChild(view);
-  };
-
-  window.onload = initialize;
-}).call(Gatherer);
+  var view = game.start();
+  document.body.appendChild(view);
+};
 
 module.exports = Gatherer;

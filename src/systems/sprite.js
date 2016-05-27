@@ -26,7 +26,7 @@ function setup(stage, spritesheet) {
 }
 
 function update() {
-  Sprite.update(function (sprite, i) {
+  Sprite.each(function (sprite, i) {
     // TODO: deal with subsprites
     var pixisprite = getPixi(i);
     var frameset = getFrame(sprite.frameset);
@@ -37,6 +37,11 @@ function update() {
     var modifiedX = toPosition(x);
     var modifiedY = pixisprite ? toPosition(baselineY) : toPosition(y);
     var layer = getLayer(sprite.layer);
+
+    if (sprite.entity.destroyed) {
+      pixisprite.parent.removeChild(pixisprite);
+      return;
+    }
 
     if (pixisprite.parent) {
       pixisprite.parent.removeChild(pixisprite);

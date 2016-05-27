@@ -36,12 +36,7 @@ var Component = function (defaults, properties) {
       this.entity = entity;
       if (this.initialize) this.initialize();
 
-      this.on('destroy', this.destroy);
       return this;
-    },
-
-    destroy: function () {
-      this.destroyed = true;
     },
 
     unregister: function () {
@@ -99,18 +94,12 @@ var Component = function (defaults, properties) {
     _.filter(this.get(), fn, ctx);
   };
 
-  ComponentClass.update = function (fn) {
-    var destroyed = [];
-    this.each(function (component, i) {
-      if (component.destroyed) {
-        destroyed.push(component);
+  ComponentClass.cleanup = function () {
+    this.each(function (component) {
+      if (component.entity.destroyed) {
+        component.unregister();
         return;
       }
-      if (fn) fn(component, i);
-    });
-
-    destroyed.forEach(function (component) {
-      component.unregister();
     });
   };
 
