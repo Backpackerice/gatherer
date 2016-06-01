@@ -4,9 +4,7 @@ var Component = require('../base/component2.js');
 var Sprite = new Component({
   frameset: null,
   layer: null,
-  subsprites: [],
-  x: 0, // grid positions
-  y: 0
+  subsprites: []
 });
 
 Sprite.addSubsprite = function (sprite, frameset, x, y, index) {

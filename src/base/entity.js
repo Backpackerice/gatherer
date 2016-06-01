@@ -1,20 +1,17 @@
-var _ = require('lodash'),
-    Dispatcher = require('./dispatcher.js');
+var _ = require('lodash');
 
-function Entity (components) {
-  Dispatcher.call(this);
+function Entity() {
   this.id = _.uniqueId('e');
-
-  _.each(components, function (component) {
-    component.register(this);
-  }.bind(this));
-
   return this;
 }
 
-Entity.prototype.destroy = function () {
-  this.destroyed = true;
-  this.emit('destroy');
+Entity.prototype.set = function (Component, data) {
+  var component = new Component(data);
+  component.register(this);
 };
 
-if (module && module.exports) module.exports = Entity;
+Entity.prototype.destroy = function () {
+  this.destroyed = true;
+};
+
+module.exports = Entity;

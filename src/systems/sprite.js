@@ -1,5 +1,6 @@
 
 var Sprite = require('../components/sprite.js');
+var Position = require('../components/position.js');
 var PIXI = require('pixi.js');
 var _ = require('lodash');
 
@@ -27,18 +28,21 @@ function setup(stage, spritesheet) {
 
 function update() {
   Sprite.each(function (sprite, i) {
+    var entity = sprite.entity;
+    var position = Position.get(entity.id);
+
     // TODO: deal with subsprites
     var pixisprite = getPixi(i);
     var frameset = getFrame(sprite.frameset);
     var texture = PIXI.Texture.fromFrame(frameset);
-    var x = sprite.x;
-    var y = sprite.y;
+    var x = position.x;
+    var y = position.y;
     var baselineY = pixisprite.frame ? y + 1 - pixisprite.frame.height / Sprite.tile : y;
     var modifiedX = toPosition(x);
     var modifiedY = pixisprite ? toPosition(baselineY) : toPosition(y);
     var layer = getLayer(sprite.layer);
 
-    if (sprite.entity.destroyed) {
+    if (entity.destroyed) {
       pixisprite.parent.removeChild(pixisprite);
       return;
     }

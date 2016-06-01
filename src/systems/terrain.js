@@ -7,15 +7,16 @@ function update() {
   Terrain.each(function (terrain) {
     var entity = terrain.entity;
     var position = Position.get(entity.id);
-    if (entity.destroyed) {
-      // TODO: cleanup
-      return;
-    }
     var x = position.x;
     var y = position.y;
+    var pos = pairing(x, y);
     if (!position) return;
 
-    var pos = pairing(x, y);
+    if (entity.destroyed && tiles[pos] === entity) {
+      tiles[pos] = null;
+      return;
+    }
+
     if (tiles[pos] !== entity) {
       tiles[pos] = entity;
     }

@@ -48,8 +48,9 @@ Gatherer.start = function () {
   game.registerRender(SpriteSystem.update);
 
   // Other component updates.
-  registerComponent('Terrain', require('./components/terrain.js'));
   registerComponent('Sprite',  require('./components/sprite.js'));
+  registerComponent('Terrain', require('./components/terrain.js'));
+  registerComponent('Position',  require('./components/position.js'));
 
   var view = game.start();
   document.body.appendChild(view);
