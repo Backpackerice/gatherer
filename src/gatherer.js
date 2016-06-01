@@ -5,9 +5,6 @@ var Game = require('./base/game.js');
 var SpriteSystem = require('./systems/sprite.js');
 var TerrainSystem = require('./systems/terrain.js');
 
-// Generators
-var map = require('./entities/map.js');
-
 var game;
 var registerComponent = function (name, component) {
   Gatherer[name] = component;
@@ -19,7 +16,7 @@ Gatherer.start = function () {
     assets: ['assets/sprites.json'],
     ready: function (game, loader, resources) {
       SpriteSystem.setup(game.stage, resources['assets/sprites.json'].data);
-      map(12, 12);
+      TerrainSystem.generate(12, 12);
       // TODO: better interactions setup
       // var actions = new Actions(),
       //     player = new Entity([actions, new Hunger(), new Health()]),

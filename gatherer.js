@@ -59,10 +59,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	// Systems
 	var SpriteSystem = __webpack_require__(140);
-	var TerrainSystem = __webpack_require__(145);
-
-	// Generators
-	var map = __webpack_require__(150);
+	var TerrainSystem = __webpack_require__(146);
 
 	var game;
 	var registerComponent = function (name, component) {
@@ -75,7 +72,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    assets: ['assets/sprites.json'],
 	    ready: function (game, loader, resources) {
 	      SpriteSystem.setup(game.stage, resources['assets/sprites.json'].data);
-	      map(12, 12);
+	      TerrainSystem.generate(12, 12);
 	      // TODO: better interactions setup
 	      // var actions = new Actions(),
 	      //     player = new Entity([actions, new Hunger(), new Health()]),
@@ -104,8 +101,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	  game.registerRender(SpriteSystem.update);
 
 	  // Other component updates.
-	  registerComponent('Terrain', __webpack_require__(146));
 	  registerComponent('Sprite',  __webpack_require__(141));
+	  registerComponent('Terrain', __webpack_require__(147));
+	  registerComponent('Position',  __webpack_require__(145));
 
 	  var view = game.start();
 	  document.body.appendChild(view);
@@ -46261,6 +46259,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	
 	var Sprite = __webpack_require__(141);
+	var Position = __webpack_require__(145);
 	var PIXI = __webpack_require__(4);
 	var _ = __webpack_require__(3);
 
@@ -46288,18 +46287,21 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	function update() {
 	  Sprite.each(function (sprite, i) {
+	    var entity = sprite.entity;
+	    var position = Position.get(entity.id);
+
 	    // TODO: deal with subsprites
 	    var pixisprite = getPixi(i);
 	    var frameset = getFrame(sprite.frameset);
 	    var texture = PIXI.Texture.fromFrame(frameset);
-	    var x = sprite.x;
-	    var y = sprite.y;
+	    var x = position.x;
+	    var y = position.y;
 	    var baselineY = pixisprite.frame ? y + 1 - pixisprite.frame.height / Sprite.tile : y;
 	    var modifiedX = toPosition(x);
 	    var modifiedY = pixisprite ? toPosition(baselineY) : toPosition(y);
 	    var layer = getLayer(sprite.layer);
 
-	    if (sprite.entity.destroyed) {
+	    if (entity.destroyed) {
 	      pixisprite.parent.removeChild(pixisprite);
 	      return;
 	    }
@@ -46362,9 +46364,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var Sprite = new Component({
 	  frameset: null,
 	  layer: null,
-	  subsprites: [],
-	  x: 0, // grid positions
-	  y: 0
+	  subsprites: []
 	});
 
 	Sprite.addSubsprite = function (sprite, frameset, x, y, index) {
@@ -46501,28 +46501,24 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 143 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(module) {var _ = __webpack_require__(3),
-	    Dispatcher = __webpack_require__(144);
+	var _ = __webpack_require__(3);
 
-	function Entity (components) {
-	  Dispatcher.call(this);
+	function Entity() {
 	  this.id = _.uniqueId('e');
-
-	  _.each(components, function (component) {
-	    component.register(this);
-	  }.bind(this));
-
 	  return this;
 	}
 
-	Entity.prototype.destroy = function () {
-	  this.destroyed = true;
-	  this.emit('destroy');
+	Entity.prototype.set = function (Component, data) {
+	  var component = new Component(data);
+	  component.register(this);
 	};
 
-	if (module && module.exports) module.exports = Entity;
+	Entity.prototype.destroy = function () {
+	  this.destroyed = true;
+	};
 
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(2)(module)))
+	module.exports = Entity;
+
 
 /***/ },
 /* 144 */
@@ -46575,24 +46571,49 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 145 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var Terrain = __webpack_require__(146);
-	var Position = __webpack_require__(147);
-	var pairing = __webpack_require__(149);
+	
+	var Component = __webpack_require__(142);
+
+	var Position = new Component({
+	  x: -1, // grid positions
+	  y: -1
+	});
+
+	Position.find = function (x, y) {
+	  return Position.filter(function (position) {
+	    return position.x === x && position.y === y;
+	  });
+	};
+
+	module.exports = Position;
+
+
+/***/ },
+/* 146 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var Entity = __webpack_require__(143);
+	var Terrain = __webpack_require__(147);
+	var Position = __webpack_require__(145);
+	var Sprite = __webpack_require__(141);
+	var pairing = __webpack_require__(148);
+	var randInt = __webpack_require__(149);
 	var tiles = {};
 
 	function update() {
 	  Terrain.each(function (terrain) {
 	    var entity = terrain.entity;
 	    var position = Position.get(entity.id);
-	    if (entity.destroyed) {
-	      // TODO: cleanup
-	      return;
-	    }
 	    var x = position.x;
 	    var y = position.y;
+	    var pos = pairing(x, y);
 	    if (!position) return;
 
-	    var pos = pairing(x, y);
+	    if (entity.destroyed && tiles[pos] === entity) {
+	      tiles[pos] = null;
+	      return;
+	    }
+
 	    if (tiles[pos] !== entity) {
 	      tiles[pos] = entity;
 	    }
@@ -46603,14 +46624,37 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return tiles[pairing(x, y)];
 	}
 
+	function generate(cols, rows) {
+	  for (var x = 0; x < cols; x++) {
+	    for (var y = 0; y < rows; y++) {
+	      var type = soil; // always soil for now
+	      var water = randInt(type.water[0], type.water[1]);
+	      var nutrients = randInt(type.nutrients[0], type.nutrients[1]);
+
+	      var entity = new Entity();
+	      entity.set(Terrain, {water: water, nutrients: nutrients});
+	      entity.set(Position, {x: x, y: y});
+	      entity.set(Sprite, {layer: 0, frameset: type.frameSet});
+	    }
+	  }
+	}
+
 	module.exports = {
 	  update: update,
-	  get: get
+	  get: get,
+	  generate: generate
+	};
+
+	// terrain types to randomly generate
+	var soil = {
+	  frameSet: 'tile-soil',
+	  water: [20, 80],
+	  nutrients: [60, 100]
 	};
 
 
 /***/ },
-/* 146 */
+/* 147 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//var _ = require('lodash');
@@ -46626,127 +46670,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 147 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var _ = __webpack_require__(3),
-	    Component = __webpack_require__(148);
-
-	var Position = module.exports = new Component({
-	  constructor: function Position (x, y, duration) {
-	    this.x = _.isUndefined(x) ? -1 : x;
-	    this.y = _.isUndefined(y) ? -1 : y;
-	    this.duration = duration || 0;
-	    this.move(x, y, duration);
-	    this.lastTick = null;
-	    return this;
-	  },
-
-	  move: function (x, y, duration) {
-	    this.x = x;
-	    this.y = y;
-	    this.duration = duration;
-	    if (this.entity) this.emit('position:moveStart', this);
-	    return this;
-	  },
-
-	  tick: function (gametime) {
-	    var time = gametime.realtime;
-	    if (this.duration > 0) {
-	      if (!this.lastTick) this.lastTick = gametime;
-	      this.duration = this.duration - (gametime.realtime - this.lastTick.realtime);
-	      if (this.duration <= 0) this.emit('position:move', this);
-	      this.lastTick = gametime;
-	    } else if (this.lastTick !== null) this.lastTick = null;
-	    return this;
-	  }
-	});
-
-	Position.update = function (time) {
-	  var positions = this.get();
-	  for (var i = 0; i < positions.length; i++) { positions[i].tick(time); }
-	};
-
-	Position.find = function (x, y) {
-	  this.filter(function (position) {
-	    return position.x === x && position.y === y;
-	  });
-	};
-
-
-/***/ },
 /* 148 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var _ = __webpack_require__(3);
-	var Entity = __webpack_require__(143);
-	var Dispatcher = __webpack_require__(144);
-
-	var Component = module.exports = function (prototype) {
-	  var entities = {}; // hidden entity map
-	  var pool = []; // pool of destroyed components for re-use
-
-	  // Prototype options
-	  if (prototype.define) { // Add any object definitions
-	    _.each(prototype.define, function (def, key) {
-	      var options = {};
-	      if (typeof def === 'object') _.extend(options, def);
-	      else if (typeof def === 'function') options.get = def;
-	      else options.value = def;
-
-	      Object.defineProperty(prototype, key, options);
-	    });
-	    delete prototype.define;
-	  }
-
-	  var proto = {
-	    register: function (entity) {
-	      Dispatcher.call(this, entity);
-	      entities[entity.id] = this;
-	      this.entity = entity;
-	      if (this.initialize) this.initialize();
-
-	      this.on('destroy', this.destroy);
-	      return this;
-	    },
-	    destroy: function () {
-	      this.stopListening();
-	      this.entity = null;
-	      entities[entity.id] = null;
-	      pool.push(this);
-	      return this;
-	    }
-	  };
-
-	  var component = prototype.constructor;
-	  component.prototype = _.extend(prototype, proto);
-
-	  // General component management
-	  component.get = function (eId) {
-	    if (eId === undefined) return entities;
-	    else if (eId instanceof Entity) return entities[eId.id];
-	    else return entities[eId];
-	  };
-	  component.create = function () {
-	    var component;
-	    if (pool.length) component = pool.pop();
-	    else component = new this();
-
-	    this.prototype.constructor.apply(component, arguments);
-	    return component;
-	  };
-
-	  component.each = function (fn, ctx) { _.each(this.get(), fn, ctx); };
-	  component.filter = function (fn, ctx) { _.filter(this.get(), fn, ctx); };
-
-	  return component;
-	};
-
-	Component.create = function (proto) { return new this(proto); };
-
-
-/***/ },
-/* 149 */
 /***/ function(module, exports) {
 
 	// from http://sachiniscool.blogspot.com/2011/06/cantor-pairing-function-and-reversal.html
@@ -46754,48 +46678,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 150 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var Entity = __webpack_require__(143);
-	var Terrain = __webpack_require__(146);
-	var Position = __webpack_require__(147);
-	var Sprite = __webpack_require__(141);
-	var randInt = __webpack_require__(151);
-
-	function map(cols, rows) {
-	  for (var x = 0; x < cols; x++) {
-	    for (var y = 0; y < rows; y++) {
-	      var type = soil, // always soil for now
-	          water = randInt(type.water[0], type.water[1]),
-	          nutrients = randInt(type.nutrients[0], type.nutrients[1]);
-
-	      var entity = new Entity();
-	      Terrain.create({water: water, nutrients: nutrients}).register(entity);
-	      Position.create(x, y).register(entity);
-	      Sprite.create({
-	        layer: 0,
-	        x: x,
-	        y: y,
-	        frameset: type.frameSet
-	      }).register(entity);
-	    }
-	  }
-	  return entity;
-	}
-
-	module.exports = map;
-
-	// terrain types to randomly generate
-	var soil = {
-	  frameSet: 'tile-soil',
-	  water: [20, 80],
-	  nutrients: [60, 100]
-	};
-
-
-/***/ },
-/* 151 */
+/* 149 */
 /***/ function(module, exports) {
 
 	var randInt = module.exports = function (min, max) { return Math.floor(Math.random() * (max - min)) + min; }; // [min, max)
