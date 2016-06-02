@@ -1,6 +1,6 @@
 
 var _ = require('lodash');
-var randInt = require('../helpers/randInt.js');
+var random = require('../base/random.js');
 
 function meiosis(genome) {
   var zygote = [];
@@ -8,7 +8,7 @@ function meiosis(genome) {
     genome.chromosomes.forEach(function (chromosome) {
       var c = _.clone(chromosome);
       for (var i = 0; i < chromosome.length / 2; i++) {
-        var chromatid = c.splice(randInt(0, c.length), 1);
+        var chromatid = c.splice(random.int(0, c.length), 1);
         zygote.push(chromatid[0]);
       }
     });
@@ -29,7 +29,7 @@ function* generator(library, level, ploidy, count) {
   // Generates random chromosomes given a library of genes with the
   // keys as the gene and the value as an adjustable chance weight.
   count = count || 99;
-  level = level || randInt(1, 4);
+  level = level || random.int(1, 4);
   ploidy = ploidy || 2;
   var index = 0;
   var chance = 0;
@@ -56,7 +56,7 @@ function* generator(library, level, ploidy, count) {
       var chromosome = [];
       for (var ct = 0; ct < ploidy; ct++) {
         var chromatid = [];
-        for (var t = 0; t < randInt(0, 4 + level); t++) {
+        for (var t = 0; t < random.int(0, 4 + level); t++) {
           chromatid.push(randomGene());
         }
         chromosome.push(chromatid.join('.'));
