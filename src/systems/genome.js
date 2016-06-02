@@ -40,7 +40,7 @@ function* generator(library, level, ploidy, count) {
   });
   var chromosomes;
   var randomGene = function () {
-    var chance = Math.random(), gene = _.last(chances).gene;
+    var chance = random.random(), gene = _.last(chances).gene;
     for (var c = 0; c < chances.length; c++) {
       if (chance < chances[c].chance) {
         gene = chances[c].gene;

@@ -2,6 +2,7 @@
 var expect = require('chai').expect;
 var Genome = require('../src/components/genome.js');
 var GenomeSystem = require('../src/systems/genome.js');
+var random = require('../src/base/random.js');
 
 describe('genome component', function () {
   var genome;
@@ -38,6 +39,41 @@ describe('genome system', function () {
   });
 });
 
-describe('plant generator', function () {
-  
+describe('genome generators', function () {
+  it('creates a random chromosomes generator', function () {
+    random.seed(123);
+    var library = {'a': 1, 'b': 2, 'c': 3};
+    var level = 1;
+    var ploidy = 2;
+    var count = 3;
+    var gen = GenomeSystem.generator(library, level, ploidy, count);
+
+    var random1 = gen.next();
+    var random2 = gen.next();
+    var random3 = gen.next();
+    var random4 = gen.next();
+    expect(random1.value).to.deep.equal([['c','b.c.c'],['c.b.c',''],['b','c'],['b','b.c.b']]);
+    expect(random2.value).to.deep.equal([['',''],['c.b.b.b','c'],['b','b'],['b','c.a.b']]);
+    expect(random3.value).to.deep.equal([['b.a',''],['c.c.c.c','c.a'],['b.c.c',''],['b.b','c.a']]);
+    expect(random4.done).to.equal(true);
+  });
+
+  it('creates a child chromosomes generator', function () {
+    random.seed(123);
+    var count = 2;
+    var mother = new Genome({
+      chromosomes: [['c','b.c.c'],['c.b.c',''],['b','c'],['b','b.c.b']]
+    });
+    var father = new Genome({
+      chromosomes: [['',''],['c.b.b.b','c'],['b','b'],['b','c.a.b']]
+    });
+
+    var nursery = GenomeSystem.nursery(mother, father, count);
+    var child1 = nursery.next();
+    var child2 = nursery.next();
+    var child3 = nursery.next();
+    expect(child1.value).to.deep.equal([['b.c.c',''],['','c'],['b','b'],['b','c.a.b']]);
+    expect(child2.value).to.deep.equal([['b.c.c',''],['c.b.c','c.b.b.b'],['b','b'],['b.c.b','c.a.b']]);
+    expect(child3.done).to.equal(true);
+  });
 });

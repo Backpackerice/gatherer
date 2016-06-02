@@ -46300,7 +46300,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  });
 	  var chromosomes;
 	  var randomGene = function () {
-	    var chance = Math.random(), gene = _.last(chances).gene;
+	    var chance = random.random(), gene = _.last(chances).gene;
 	    for (var c = 0; c < chances.length; c++) {
 	      if (chance < chances[c].chance) {
 	        gene = chances[c].gene;
@@ -46368,15 +46368,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	var mt = new MersenneTwister();
 
 	function seed(value) {
-	  mt.init_seed(value);
+	  mt = new MersenneTwister(value);
+	}
+
+	function random() {
+	  return mt.random();
 	}
 
 	function randInt(min, max) { // [min, max)
-	  return Math.floor(mt.random() * (max - min)) + min;
+	  return Math.floor(random() * (max - min)) + min;
 	}
 
 	module.exports = {
 	  seed: seed,
+	  random: random,
 	  int: randInt
 	};
 

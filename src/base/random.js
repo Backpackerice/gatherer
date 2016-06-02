@@ -3,14 +3,19 @@ var MersenneTwister = require('mersenne-twister');
 var mt = new MersenneTwister();
 
 function seed(value) {
-  mt.init_seed(value);
+  mt = new MersenneTwister(value);
+}
+
+function random() {
+  return mt.random();
 }
 
 function randInt(min, max) { // [min, max)
-  return Math.floor(mt.random() * (max - min)) + min;
+  return Math.floor(random() * (max - min)) + min;
 }
 
 module.exports = {
   seed: seed,
+  random: random,
   int: randInt
 };
