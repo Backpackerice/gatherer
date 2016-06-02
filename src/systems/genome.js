@@ -25,6 +25,58 @@ function recombine(genome1, genome2) {
   return chromosomes;
 }
 
+function* generator(library, level, ploidy, count) {
+  // Generates random chromosomes given a library of genes with the
+  // keys as the gene and the value as an adjustable chance weight.
+  count = count || 99;
+  level = level || randInt(1, 4);
+  ploidy = ploidy || 2;
+  var index = 0;
+  var chance = 0;
+  var total = _.reduce(library, function (sum, num) { return sum + num; });
+  var chances = _.map(library, function (count, gene) {
+    chance += count / total;
+    return {gene: gene, chance: chance};
+  });
+  var chromosomes;
+  var randomGene = function () {
+    var chance = Math.random(), gene = _.last(chances).gene;
+    for (var c = 0; c < chances.length; c++) {
+      if (chance < chances[c].chance) {
+        gene = chances[c].gene;
+        break;
+      }
+    }
+    return gene;
+  };
+
+  while(index < count) {
+    chromosomes = [];
+    for (var cs = 0; cs < level * 4; cs++) {
+      var chromosome = [];
+      for (var ct = 0; ct < ploidy; ct++) {
+        var chromatid = [];
+        for (var t = 0; t < randInt(0, 4 + level); t++) {
+          chromatid.push(randomGene());
+        }
+        chromosome.push(chromatid.join('.'));
+      }
+      chromosomes.push(chromosome);
+    }
+    index++;
+    yield chromosomes;
+  }
+}
+
+function* nursery(mother, father, count) {
+  count = count || 99;
+  var index = 0;
+  while(index < count) {
+    index++;
+    yield recombine(mother, father);
+  }
+}
+
 // TODO: gene expression
 // express: function () {
 //   var counts = [], traits = {};
@@ -41,5 +93,7 @@ function recombine(genome1, genome2) {
 
 module.exports = {
   meiosis: meiosis,
-  recombine: recombine
+  recombine: recombine,
+  generator: generator,
+  nursery: nursery
 };

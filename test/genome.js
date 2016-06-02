@@ -37,3 +37,7 @@ describe('genome system', function () {
     expect(chromosomes).to.deep.equal([[1, 2], [1, 2]]);
   });
 });
+
+describe('plant generator', function () {
+  
+});

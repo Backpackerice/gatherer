@@ -12,6 +12,7 @@
     "chai": "^3.5.0",
     "json-loader": "^0.5.4",
     "lodash": "^4.12.0",
+    "mersenne-twister": "^1.0.1",
     "mocha": "^2.5.3",
     "pixi.js": "^3.0.11",
     "transform-loader": "^0.2.3",

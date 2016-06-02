@@ -58,8 +58,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	var Game = __webpack_require__(1);
 
 	// Systems
-	var SpriteSystem = __webpack_require__(140);
-	var TerrainSystem = __webpack_require__(146);
+	var GenomeSystem = __webpack_require__(140);
+	var SpriteSystem = __webpack_require__(142);
+	var TerrainSystem = __webpack_require__(148);
 
 	var game;
 	var registerComponent = function (name, component) {
@@ -101,9 +102,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	  game.registerRender(SpriteSystem.update);
 
 	  // Other component updates.
-	  registerComponent('Sprite',  __webpack_require__(141));
-	  registerComponent('Terrain', __webpack_require__(147));
-	  registerComponent('Position',  __webpack_require__(145));
+	  registerComponent('Sprite',  __webpack_require__(143));
+	  registerComponent('Terrain', __webpack_require__(149));
+	  registerComponent('Position',  __webpack_require__(147));
 
 	  var view = game.start();
 	  document.body.appendChild(view);
@@ -46258,8 +46259,120 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var Sprite = __webpack_require__(141);
-	var Position = __webpack_require__(145);
+	var _ = __webpack_require__(3);
+	var randInt = __webpack_require__(141);
+
+	function meiosis(genome) {
+	  var zygote = [];
+	  if (genome.ploidy % 2 === 0) {
+	    genome.chromosomes.forEach(function (chromosome) {
+	      var c = _.clone(chromosome);
+	      for (var i = 0; i < chromosome.length / 2; i++) {
+	        var chromatid = c.splice(randInt(0, c.length), 1);
+	        zygote.push(chromatid[0]);
+	      }
+	    });
+	  }
+	  return zygote;
+	}
+
+	function recombine(genome1, genome2) {
+	  var chromosomes = [];
+	  if (genome1.chromosomes.length === genome2.chromosomes.length) {
+	    chromosomes = _.zip(meiosis(genome1), meiosis(genome2));
+	    _.remove(chromosomes, function (chromosome) { return chromosome.length === 0; });
+	  }
+	  return chromosomes;
+	}
+
+	function* generator(library, level, ploidy, count) {
+	  // Generates random chromosomes given a library of genes with the
+	  // keys as the gene and the value as an adjustable chance weight.
+	  count = count || 99;
+	  level = level || randInt(1, 4);
+	  ploidy = ploidy || 2;
+	  var index = 0;
+	  var chance = 0;
+	  var total = _.reduce(library, function (sum, num) { return sum + num; });
+	  var chances = _.map(library, function (count, gene) {
+	    chance += count / total;
+	    return {gene: gene, chance: chance};
+	  });
+	  var chromosomes;
+	  var randomGene = function () {
+	    var chance = Math.random(), gene = _.last(chances).gene;
+	    for (var c = 0; c < chances.length; c++) {
+	      if (chance < chances[c].chance) {
+	        gene = chances[c].gene;
+	        break;
+	      }
+	    }
+	    return gene;
+	  };
+
+	  while(index < count) {
+	    chromosomes = [];
+	    for (var cs = 0; cs < level * 4; cs++) {
+	      var chromosome = [];
+	      for (var ct = 0; ct < ploidy; ct++) {
+	        var chromatid = [];
+	        for (var t = 0; t < randInt(0, 4 + level); t++) {
+	          chromatid.push(randomGene());
+	        }
+	        chromosome.push(chromatid.join('.'));
+	      }
+	      chromosomes.push(chromosome);
+	    }
+	    index++;
+	    yield chromosomes;
+	  }
+	}
+
+	function* nursery(mother, father, count) {
+	  count = count || 99;
+	  var index = 0;
+	  while(index < count) {
+	    index++;
+	    yield recombine(mother, father);
+	  }
+	}
+
+	// TODO: gene expression
+	// express: function () {
+	//   var counts = [], traits = {};
+	//   _.each(this.chromosomes, function (chromosome, i) {
+	//     var ts = [], c = {};
+	//     _.each(chromosome, function (chromatid) { ts = ts.concat(chromatid.split('.'));});
+	//     _.each(ts, function (t) { c[t] = c[t] ? c[t] + 1 : 1; });
+	//     counts.push(c);
+	//   });
+	//   counts.push(function (a, b) { return (a > b) ? a : b; });
+	//   traits = _.merge.apply(this, counts);
+	//   return traits;
+	// }
+
+	module.exports = {
+	  meiosis: meiosis,
+	  recombine: recombine,
+	  generator: generator,
+	  nursery: nursery
+	};
+
+
+/***/ },
+/* 141 */
+/***/ function(module, exports) {
+
+	var randInt = module.exports = function (min, max) { return Math.floor(Math.random() * (max - min)) + min; }; // [min, max)
+
+
+/***/ },
+/* 142 */
+/***/ function(module, exports, __webpack_require__) {
+
+	
+	var Sprite = __webpack_require__(143);
+	var Position = __webpack_require__(147);
 	var PIXI = __webpack_require__(4);
 	var _ = __webpack_require__(3);
 
@@ -46355,11 +46468,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 141 */
+/* 143 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var Component = __webpack_require__(142);
+	var Component = __webpack_require__(144);
 
 	var Sprite = new Component({
 	  frameset: null,
@@ -46380,12 +46493,12 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 142 */
+/* 144 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(3);
-	var Entity = __webpack_require__(143);
-	var Dispatcher = __webpack_require__(144);
+	var Entity = __webpack_require__(145);
+	var Dispatcher = __webpack_require__(146);
 
 	// Component Factory
 	// -----------------
@@ -46498,7 +46611,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 143 */
+/* 145 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(3);
@@ -46521,7 +46634,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 144 */
+/* 146 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(module) {var _ = __webpack_require__(3);
@@ -46568,11 +46681,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(2)(module)))
 
 /***/ },
-/* 145 */
+/* 147 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var Component = __webpack_require__(142);
+	var Component = __webpack_require__(144);
 
 	var Position = new Component({
 	  x: -1, // grid positions
@@ -46589,15 +46702,15 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 146 */
+/* 148 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var Entity = __webpack_require__(143);
-	var Terrain = __webpack_require__(147);
-	var Position = __webpack_require__(145);
-	var Sprite = __webpack_require__(141);
-	var pairing = __webpack_require__(148);
-	var randInt = __webpack_require__(149);
+	var Entity = __webpack_require__(145);
+	var Terrain = __webpack_require__(149);
+	var Position = __webpack_require__(147);
+	var Sprite = __webpack_require__(143);
+	var pairing = __webpack_require__(150);
+	var randInt = __webpack_require__(141);
 	var tiles = {};
 
 	function update() {
@@ -46654,11 +46767,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 147 */
+/* 149 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//var _ = require('lodash');
-	var Component = __webpack_require__(142);
+	var Component = __webpack_require__(144);
 
 	var Terrain = new Component({
 	  water: 0,
@@ -46670,18 +46783,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 148 */
+/* 150 */
 /***/ function(module, exports) {
 
 	// from http://sachiniscool.blogspot.com/2011/06/cantor-pairing-function-and-reversal.html
 	var pairing = module.exports = function (x, y) { return ((x + y) * (x + y + 1)) / 2 + y; };
-
-
-/***/ },
-/* 149 */
-/***/ function(module, exports) {
-
-	var randInt = module.exports = function (min, max) { return Math.floor(Math.random() * (max - min)) + min; }; // [min, max)
 
 
 /***/ }
