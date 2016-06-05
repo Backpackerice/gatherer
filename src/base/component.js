@@ -1,6 +1,5 @@
 var _ = require('lodash');
 var Entity = require('./entity.js');
-var Dispatcher = require('./dispatcher.js');
 
 var Component = module.exports = function (prototype) {
   var entities = {}; // hidden entity map
@@ -21,7 +20,6 @@ var Component = module.exports = function (prototype) {
 
   var proto = {
     register: function (entity) {
-      Dispatcher.call(this, entity);
       entities[entity.id] = this;
       this.entity = entity;
       if (this.initialize) this.initialize();
@@ -32,7 +30,7 @@ var Component = module.exports = function (prototype) {
     destroy: function () {
       this.stopListening();
       this.entity = null;
-      entities[entity.id] = null;
+      entities[this.entity.id] = null;
       pool.push(this);
       return this;
     }

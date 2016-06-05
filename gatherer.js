@@ -60,7 +60,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	// Systems
 	var GenomeSystem = __webpack_require__(140);
 	var SpriteSystem = __webpack_require__(143);
-	var TerrainSystem = __webpack_require__(149);
+	var TerrainSystem = __webpack_require__(148);
 
 	var game;
 	var registerComponent = function (name, component) {
@@ -103,8 +103,8 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  // Other component updates.
 	  registerComponent('Sprite',  __webpack_require__(144));
-	  registerComponent('Terrain', __webpack_require__(150));
-	  registerComponent('Position',  __webpack_require__(148));
+	  registerComponent('Terrain', __webpack_require__(149));
+	  registerComponent('Position',  __webpack_require__(147));
 
 	  var view = game.start();
 	  document.body.appendChild(view);
@@ -117,7 +117,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 1 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(module) {var _ = __webpack_require__(3);
+	var _ = __webpack_require__(2);
 	var PIXI = __webpack_require__(4);
 	var GameTime = __webpack_require__(139);
 
@@ -131,7 +131,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  this.updaters = [];
 	  this.renderers = [];
-	  this.time = null;
 	  return this;
 	}
 
@@ -165,14 +164,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	  },
 
 	  update: function (time) {
-	    var newGameTime = this.time = GameTime.tick(time); // Tick time first
+	    var newGameTime = GameTime.update(time); // Tick time first
 	    _.each(this.updaters, function (update) {
 	      update(newGameTime);
 	    });
 	  },
 
-	  render: function () {
-	    var time = this.time;
+	  render: function (time) {
 	    this.renderer.render(this.stage);
 	    _.each(this.renderers, function (render) {
 	      render(time);
@@ -180,42 +178,25 @@ return /******/ (function(modules) { // webpackBootstrap
 	  },
 
 	  loop: function () {
-	    var lastTime = null,
-	        animate = function (time) {
+	    var lastTime = null;
+	    var animate = function (time) {
 	          if (!lastTime) lastTime = time;
 	          while (lastTime <= time) {
 	            this.update(lastTime);
 	            lastTime += 10; // 10 ms update batching
 	          }
-	          this.render();
-	          this.frame = window.requestAnimationFrame(animate);
+	          this.render(time);
+	          this.frame = requestAnimationFrame(animate);
 	        }.bind(this);
-	    this.frame = window.requestAnimationFrame(animate);
+	    this.frame = requestAnimationFrame(animate);
 	  }
 	};
 
-	if (module && module.exports) module.exports = Game;
+	module.exports = Game;
 
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(2)(module)))
 
 /***/ },
 /* 2 */
-/***/ function(module, exports) {
-
-	module.exports = function(module) {
-		if(!module.webpackPolyfill) {
-			module.deprecate = function() {};
-			module.paths = [];
-			// module.parent = undefined by default
-			module.children = [];
-			module.webpackPolyfill = 1;
-		}
-		return module;
-	}
-
-
-/***/ },
-/* 3 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;/* WEBPACK VAR INJECTION */(function(module, global) {/**
@@ -16461,7 +16442,23 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	}.call(this));
 
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(2)(module), (function() { return this; }())))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(3)(module), (function() { return this; }())))
+
+/***/ },
+/* 3 */
+/***/ function(module, exports) {
+
+	module.exports = function(module) {
+		if(!module.webpackPolyfill) {
+			module.deprecate = function() {};
+			module.paths = [];
+			// module.parent = undefined by default
+			module.children = [];
+			module.webpackPolyfill = 1;
+		}
+		return module;
+	}
+
 
 /***/ },
 /* 4 */
@@ -42549,7 +42546,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	}(this));
 
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(2)(module), (function() { return this; }())))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(3)(module), (function() { return this; }())))
 
 /***/ },
 /* 118 */
@@ -46182,84 +46179,105 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 139 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
-	/* WEBPACK VAR INJECTION */(function(module) {function GameTime (timestamp) {
-	  this.time = timestamp || GameTime.time;
-	  return this.get();
-	}
+	
+	var HOUR = 60;
+	var DAY = HOUR * 24;
+	var MONTH = DAY * 30; // 4 weeks
+	var SEASON = MONTH * 2;
+	var YEAR = SEASON * 4; // 4 seasons
 
-	GameTime.prototype = {
-	  get: function () {
-	    if (!this.minute) {
-	      var time = this.time;
+	var DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+	var MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'September', 'October'];
 
-	      this.year = Math.floor(time / GameTime.YEAR);
-	      this.years = Math.floor(this.time / GameTime.YEAR);
-	      time = time - this.year * GameTime.YEAR;
-	      this.season = Math.floor(time / GameTime.SEASON);
-	      this.seasons = Math.floor(this.time / GameTime.SEASON);
-	      time = time - this.season * GameTime.SEASON;
-	      this.month = Math.floor(time / GameTime.MONTH);
-	      this.months = Math.floor(this.time / GameTime.MONTH);
-	      time = time - this.month * GameTime.MONTH;
-	      this.day = Math.floor(time / GameTime.DAY);
-	      this.days = Math.floor(this.time / GameTime.DAY);
-	      time = time - this.day * GameTime.DAY;
-	      this.hour = Math.floor(time / GameTime.HOUR);
-	      this.hours = Math.floor(this.time / GameTime.HOUR);
-	      time = time - this.hour * GameTime.HOUR;
-	      this.minute = Math.floor(time);
-	      this.minutes = Math.floor(this.time);
-	    }
-	    return this;
-	  },
-	  toString: function () {
-	    if (!this.string) {
-	      var dayOfWeek = GameTime.DAY_NAMES[Math.floor((this.time / GameTime.DAY) % 7)];
-	      this.string =
-	          dayOfWeek + ' ' + GameTime.MONTH_NAMES[this.month] + ' ' + this.day + ' ' + this.year +
-	          ' ' + this.hour + ':' + this.minute;
-	    }
-	    return this.string;
-	  }
-	};
-
-	GameTime.HOUR = 60;
-	GameTime.DAY = GameTime.HOUR * 24;
-	GameTime.MONTH = GameTime.DAY * 30; // 4 weeks
-	GameTime.SEASON = GameTime.MONTH * 2;
-	GameTime.YEAR = GameTime.SEASON * 4; // 4 seasons
-
-	GameTime.MINUTE = 1200 / 100; // 1.2 sec per minute
-	GameTime.DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-	GameTime.MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'September', 'October'];
-	GameTime.start = function (time) {
-	  if (time) this.time = time;
-	  else this.time = 0;
-	};
-	GameTime.now = function () { return GameTime.time; };
-	GameTime.tick = function (realtime) {
-	  if (this.time === undefined) return; // not started
-
-	  this.realtime = this.realtime || realtime;
-	  var minutes = (realtime - this.realtime) / GameTime.MINUTE,
-	      time = this.time + minutes;
+	function GameTime(time, realtime) {
 	  this.time = time;
 	  this.realtime = realtime;
-	  return new GameTime();
+	  this.year = Math.floor(time / YEAR);
+	  this.years = Math.floor(this.time / YEAR);
+	  time = time - this.year * YEAR;
+	  this.season = Math.floor(time / SEASON);
+	  this.seasons = Math.floor(this.time / SEASON);
+
+	  this.month = Math.floor(time / MONTH);
+	  this.months = Math.floor(this.time / MONTH);
+	  time = time - this.month * MONTH;
+	  this.day = Math.floor(time / DAY);
+	  this.days = Math.floor(this.time / DAY);
+	  time = time - this.day * DAY;
+	  this.hour = Math.floor(time / HOUR);
+	  this.hours = Math.floor(this.time / HOUR);
+	  time = time - this.hour * HOUR;
+	  this.minute = Math.floor(time);
+	  this.minutes = Math.floor(this.time);
+	  return this;
+	}
+
+	GameTime.prototype = {};
+	GameTime.prototype.toString = function () {
+	  if (!this.string) {
+	    var stringSet = [];
+	    var dayOfWeek = DAY_NAMES[Math.floor((this.time / DAY) % 7)];
+	    stringSet.push('Year ' + this.year + ',');
+	    stringSet.push(dayOfWeek);
+	    stringSet.push(MONTH_NAMES[this.month]);
+	    stringSet.push(this.day);
+	    stringSet.push(this.hour + ':' + this.minute);
+	    this.string = stringSet.join(' ');
+	  }
+	  return this.string;
 	};
 
-	if (module && module.exports) module.exports = GameTime;
 
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(2)(module)))
+	// Static methods
+	var paused = true;
+	var lastTick;
+	var gametime;
+
+	GameTime.MINUTE = 1200 / 100; // 1.2 sec per minute
+
+	GameTime.start = function(starttime) {
+	  starttime = starttime || 0;
+	  gametime = new GameTime(starttime);
+	  GameTime.unpause();
+	};
+
+	GameTime.pause = function() {
+	  paused = true;
+	};
+
+	GameTime.unpause = function() {
+	  paused = false;
+	  lastTick = Date.now();
+	};
+
+	GameTime.update = function(realtime) {
+	  realtime = realtime || Date.now();
+	  if (paused) return;
+
+	  var elapsed = (realtime - lastTick) / GameTime.MINUTE;
+	  var current = GameTime.now();
+	  var time = current.time + elapsed;
+
+	  lastTick = realtime;
+	  gametime = new GameTime(time, realtime);
+	  return gametime;
+	};
+
+	GameTime.now = function () {
+	  return gametime;
+	};
+
+	module.exports = GameTime;
+
 
 /***/ },
 /* 140 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var _ = __webpack_require__(3);
+	var _ = __webpack_require__(2);
 	var random = __webpack_require__(141);
 
 	function meiosis(genome) {
@@ -46603,9 +46621,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	
 	var Sprite = __webpack_require__(144);
-	var Position = __webpack_require__(148);
+	var Position = __webpack_require__(147);
 	var PIXI = __webpack_require__(4);
-	var _ = __webpack_require__(3);
+	var _ = __webpack_require__(2);
 
 	var scaleVal;
 	var scale;
@@ -46727,9 +46745,8 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 145 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var _ = __webpack_require__(3);
+	var _ = __webpack_require__(2);
 	var Entity = __webpack_require__(146);
-	var Dispatcher = __webpack_require__(147);
 
 	// Component Factory
 	// -----------------
@@ -46760,7 +46777,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	    },
 
 	    register: function (entity) {
-	      Dispatcher.call(this, entity);
 	      entities[entity.id] = this;
 	      this.entity = entity;
 	      if (this.initialize) this.initialize();
@@ -46845,7 +46861,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 146 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var _ = __webpack_require__(3);
+	var _ = __webpack_require__(2);
 
 	function Entity() {
 	  this.id = _.uniqueId('e');
@@ -46868,53 +46884,6 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 147 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(module) {var _ = __webpack_require__(3);
-
-	function Dispatcher (target) {
-	  var dispatcher = {};
-
-	  this.on = target ? target.on : function (triggers, fn) {
-	    triggers = triggers instanceof Array ? _.uniq(triggers) : [triggers];
-	    _.each(triggers, function (t) {
-	      if (dispatcher[t] === undefined) dispatcher[t] = [];
-	      if (dispatcher[t].indexOf(fn) === -1) dispatcher[t].push(fn);
-	    });
-	  };
-	  this.off = target ? target.off : function (triggers, fn) {
-	    triggers = triggers instanceof Array ? _.uniq(triggers) : [triggers];
-	    _.each(triggers, function (t) {
-	      if (!dispatcher[t]) return;
-	      if (fn) {
-	        var index = dispatcher[t].indexOf(fn);
-	        if (index > -1) dispatcher[t].splice(index, 1);
-	      } else {
-	        dispatcher[t] = []; // clear all
-	      }
-	    });
-	  };
-	  this.emit = target ? target.emit : function (triggers, data) {
-	    triggers = triggers instanceof Array ? _.uniq(triggers) : [triggers];
-	    _.each(triggers, function (t) {
-	        if (!dispatcher[t]) return;
-	        _.each(dispatcher[t], function (fn) { fn(data); });
-	    });
-	  };
-
-	  this.stopListening = function () {
-	    this.on = _.noop;
-	    this.off = _.noop;
-	    this.emit = _.noop;
-	  }
-	}
-
-	if (module && module.exports) module.exports = Dispatcher;
-
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(2)(module)))
-
-/***/ },
-/* 148 */
-/***/ function(module, exports, __webpack_require__) {
-
 	
 	var Component = __webpack_require__(145);
 
@@ -46933,14 +46902,14 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 149 */
+/* 148 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var Entity = __webpack_require__(146);
-	var Terrain = __webpack_require__(150);
-	var Position = __webpack_require__(148);
+	var Terrain = __webpack_require__(149);
+	var Position = __webpack_require__(147);
 	var Sprite = __webpack_require__(144);
-	var pairing = __webpack_require__(151);
+	var pairing = __webpack_require__(150);
 	var random = __webpack_require__(141);
 	var tiles = {};
 
@@ -46998,7 +46967,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 150 */
+/* 149 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//var _ = require('lodash');
@@ -47014,7 +46983,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 151 */
+/* 150 */
 /***/ function(module, exports) {
 
 	// from http://sachiniscool.blogspot.com/2011/06/cantor-pairing-function-and-reversal.html

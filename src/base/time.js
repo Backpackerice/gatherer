@@ -1,67 +1,89 @@
-function GameTime (timestamp) {
-  this.time = timestamp || GameTime.time;
-  return this.get();
-}
 
-GameTime.prototype = {
-  get: function () {
-    if (!this.minute) {
-      var time = this.time;
+var HOUR = 60;
+var DAY = HOUR * 24;
+var MONTH = DAY * 30; // 4 weeks
+var SEASON = MONTH * 2;
+var YEAR = SEASON * 4; // 4 seasons
 
-      this.year = Math.floor(time / GameTime.YEAR);
-      this.years = Math.floor(this.time / GameTime.YEAR);
-      time = time - this.year * GameTime.YEAR;
-      this.season = Math.floor(time / GameTime.SEASON);
-      this.seasons = Math.floor(this.time / GameTime.SEASON);
-      time = time - this.season * GameTime.SEASON;
-      this.month = Math.floor(time / GameTime.MONTH);
-      this.months = Math.floor(this.time / GameTime.MONTH);
-      time = time - this.month * GameTime.MONTH;
-      this.day = Math.floor(time / GameTime.DAY);
-      this.days = Math.floor(this.time / GameTime.DAY);
-      time = time - this.day * GameTime.DAY;
-      this.hour = Math.floor(time / GameTime.HOUR);
-      this.hours = Math.floor(this.time / GameTime.HOUR);
-      time = time - this.hour * GameTime.HOUR;
-      this.minute = Math.floor(time);
-      this.minutes = Math.floor(this.time);
-    }
-    return this;
-  },
-  toString: function () {
-    if (!this.string) {
-      var dayOfWeek = GameTime.DAY_NAMES[Math.floor((this.time / GameTime.DAY) % 7)];
-      this.string =
-          dayOfWeek + ' ' + GameTime.MONTH_NAMES[this.month] + ' ' + this.day + ' ' + this.year +
-          ' ' + this.hour + ':' + this.minute;
-    }
-    return this.string;
-  }
-};
+var DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+var MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'September', 'October'];
 
-GameTime.HOUR = 60;
-GameTime.DAY = GameTime.HOUR * 24;
-GameTime.MONTH = GameTime.DAY * 30; // 4 weeks
-GameTime.SEASON = GameTime.MONTH * 2;
-GameTime.YEAR = GameTime.SEASON * 4; // 4 seasons
-
-GameTime.MINUTE = 1200 / 100; // 1.2 sec per minute
-GameTime.DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-GameTime.MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'September', 'October'];
-GameTime.start = function (time) {
-  if (time) this.time = time;
-  else this.time = 0;
-};
-GameTime.now = function () { return GameTime.time; };
-GameTime.tick = function (realtime) {
-  if (this.time === undefined) return; // not started
-
-  this.realtime = this.realtime || realtime;
-  var minutes = (realtime - this.realtime) / GameTime.MINUTE,
-      time = this.time + minutes;
+function GameTime(time, realtime) {
   this.time = time;
   this.realtime = realtime;
-  return new GameTime();
+  this.year = Math.floor(time / YEAR);
+  this.years = Math.floor(this.time / YEAR);
+  time = time - this.year * YEAR;
+  this.season = Math.floor(time / SEASON);
+  this.seasons = Math.floor(this.time / SEASON);
+
+  this.month = Math.floor(time / MONTH);
+  this.months = Math.floor(this.time / MONTH);
+  time = time - this.month * MONTH;
+  this.day = Math.floor(time / DAY);
+  this.days = Math.floor(this.time / DAY);
+  time = time - this.day * DAY;
+  this.hour = Math.floor(time / HOUR);
+  this.hours = Math.floor(this.time / HOUR);
+  time = time - this.hour * HOUR;
+  this.minute = Math.floor(time);
+  this.minutes = Math.floor(this.time);
+  return this;
+}
+
+GameTime.prototype = {};
+GameTime.prototype.toString = function () {
+  if (!this.string) {
+    var stringSet = [];
+    var dayOfWeek = DAY_NAMES[Math.floor((this.time / DAY) % 7)];
+    stringSet.push('Year ' + this.year + ',');
+    stringSet.push(dayOfWeek);
+    stringSet.push(MONTH_NAMES[this.month]);
+    stringSet.push(this.day);
+    stringSet.push(this.hour + ':' + this.minute);
+    this.string = stringSet.join(' ');
+  }
+  return this.string;
 };
 
-if (module && module.exports) module.exports = GameTime;
+
+// Static methods
+var paused = true;
+var lastTick;
+var gametime;
+
+GameTime.MINUTE = 1200 / 100; // 1.2 sec per minute
+
+GameTime.start = function(starttime) {
+  starttime = starttime || 0;
+  gametime = new GameTime(starttime);
+  GameTime.unpause();
+};
+
+GameTime.pause = function() {
+  paused = true;
+};
+
+GameTime.unpause = function() {
+  paused = false;
+  lastTick = Date.now();
+};
+
+GameTime.update = function(realtime) {
+  realtime = realtime || Date.now();
+  if (paused) return;
+
+  var elapsed = (realtime - lastTick) / GameTime.MINUTE;
+  var current = GameTime.now();
+  var time = current.time + elapsed;
+
+  lastTick = realtime;
+  gametime = new GameTime(time, realtime);
+  return gametime;
+};
+
+GameTime.now = function () {
+  return gametime;
+};
+
+module.exports = GameTime;

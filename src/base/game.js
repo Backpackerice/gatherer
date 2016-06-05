@@ -12,7 +12,6 @@ function Game (options) {
 
   this.updaters = [];
   this.renderers = [];
-  this.time = null;
   return this;
 }
 
@@ -46,14 +45,13 @@ Game.prototype = {
   },
 
   update: function (time) {
-    var newGameTime = this.time = GameTime.tick(time); // Tick time first
+    var newGameTime = GameTime.update(time); // Tick time first
     _.each(this.updaters, function (update) {
       update(newGameTime);
     });
   },
 
-  render: function () {
-    var time = this.time;
+  render: function (time) {
     this.renderer.render(this.stage);
     _.each(this.renderers, function (render) {
       render(time);
@@ -61,18 +59,18 @@ Game.prototype = {
   },
 
   loop: function () {
-    var lastTime = null,
-        animate = function (time) {
+    var lastTime = null;
+    var animate = function (time) {
           if (!lastTime) lastTime = time;
           while (lastTime <= time) {
             this.update(lastTime);
             lastTime += 10; // 10 ms update batching
           }
-          this.render();
-          this.frame = window.requestAnimationFrame(animate);
+          this.render(time);
+          this.frame = requestAnimationFrame(animate);
         }.bind(this);
-    this.frame = window.requestAnimationFrame(animate);
+    this.frame = requestAnimationFrame(animate);
   }
 };
 
-if (module && module.exports) module.exports = Game;
+module.exports = Game;

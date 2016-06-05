@@ -1,6 +1,5 @@
 var _ = require('lodash');
 var Entity = require('./entity.js');
-var Dispatcher = require('./dispatcher.js');
 
 // Component Factory
 // -----------------
@@ -31,7 +30,6 @@ var Component = function (defaults, properties) {
     },
 
     register: function (entity) {
-      Dispatcher.call(this, entity);
       entities[entity.id] = this;
       this.entity = entity;
       if (this.initialize) this.initialize();
