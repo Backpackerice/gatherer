@@ -61,6 +61,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var GenomeSystem = __webpack_require__(140);
 	var SpriteSystem = __webpack_require__(143);
 	var TerrainSystem = __webpack_require__(148);
+	var GrowthSystem = __webpack_require__(151);
 
 	var game;
 	var registerComponent = function (name, component) {
@@ -97,6 +98,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  // game.registerUpdate(Hunger.update.bind(Hunger));
 	  // game.registerUpdate(Growth.update.bind(Growth));
 	  game.registerUpdate(TerrainSystem.update);
+	  game.registerUpdate(GrowthSystem.update);
 
 	  // updates in render loop
 	  game.registerRender(SpriteSystem.update);
@@ -105,6 +107,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  registerComponent('Sprite',  __webpack_require__(144));
 	  registerComponent('Terrain', __webpack_require__(149));
 	  registerComponent('Position',  __webpack_require__(147));
+	  registerComponent('Growth',  __webpack_require__(152));
 
 	  var view = game.start();
 	  document.body.appendChild(view);
@@ -46870,7 +46873,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	Entity.prototype.set = function (Component, data) {
 	  var component = new Component(data);
-	  component.register(this);
+	  return component.register(this);
 	};
 
 	Entity.prototype.destroy = function () {
@@ -46988,6 +46991,178 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	// from http://sachiniscool.blogspot.com/2011/06/cantor-pairing-function-and-reversal.html
 	var pairing = module.exports = function (x, y) { return ((x + y) * (x + y + 1)) / 2 + y; };
+
+
+/***/ },
+/* 151 */
+/***/ function(module, exports, __webpack_require__) {
+
+	
+	var Growth = __webpack_require__(152);
+	var Position = __webpack_require__(147);
+	var Terrain = __webpack_require__(149);
+	var Sprite = __webpack_require__(144);
+	var TerrainSystem = __webpack_require__(148);
+
+	var stages = __webpack_require__(153);
+
+	function update(gametime) {
+	  var DAY = 60*24;
+	  var time = gametime.time;
+	  Growth.each(function (growth) {
+	    var entity = growth.entity;
+	    var position = Position.get(entity.id);
+	    var sprite = Sprite.get(entity.id);
+
+	    if (entity.destroyed || !position) return;
+
+	    var tile = TerrainSystem.get(position.x, position.y);
+	    var terrain = Terrain.get(tile.id);
+
+	    var stage = growth.stage;
+	    var newEnergy = 0;
+	    var newStage  = stage;
+
+	    growth.last_tick = growth.last_tick || time;
+	    if ((time - growth.last_tick) * growth.tick_rate > DAY) {
+	      newEnergy = energy(growth, terrain, time);
+	      newStage = stages[stage].update(growth, terrain, time);
+	      growth.death_ticks += 1 * !newEnergy;
+	      growth.last_tick = time;
+	      growth.stage_ticks++;
+	      growth.ticks++;
+	    }
+
+	    if (stage !== newStage) growth.stage_ticks = 0;
+	    growth.energy = Math.min(growth.max_energy, growth.energy + newEnergy);
+	    growth.stage = newStage;
+	    sprite.frameset = stages[newStage].frameset;
+	  });
+	}
+
+	function energy(growth, terrain) {
+	  var dWater = Math.abs(growth.affinity_water - terrain.water);
+	  var dSoil  = Math.abs(growth.affinity_soil  - terrain.nutrients);
+	  var dLight = Math.abs(growth.affinity_light - terrain.light);
+	  var water = dWater < 10 * growth.affinity_water / 5;
+	  var soil  = dSoil  < 10 * growth.affinity_soil  / 5;
+	  var light = dLight < 10 * growth.affinity_light / 5;
+	  if (!(water + soil) || !(water + light) || !(soil + light)) return false;
+	  return water + soil + light;
+	}
+
+	module.exports = {
+	  update: update
+	};
+
+
+/***/ },
+/* 152 */
+/***/ function(module, exports, __webpack_require__) {
+
+	
+	var Component = __webpack_require__(145);
+
+	var Growth = new Component({
+	  stage:   1,
+	  ticks:   0, // growth ticks (time units alive)
+	  cycle:   0, // life cycles
+	  energy:  0, // energy for growth
+	  max_energy: 100,
+	  death_ticks: 0, // 5 death ticks mean dead plant
+	  stage_ticks: 0, // number of ticks in current stage
+	  last_tick: null,
+
+	  // Growth counts
+	  roots:   0,
+	  stems:   0,
+	  leaves:  0,
+	  flowers: 0,
+	  seeds:   0,
+
+	  // Resource affinities
+	  // Resources provide affinity/5 energy and are consumed during a tick
+	  // Not being within 10 of at least 2 affinities adds death ticks
+	  affinity_light: 50,
+	  affinity_water: 30,
+	  affinity_soil:  60,
+
+	  tick_rate: 1, // ticks per day (< 1 slower stages, > 1 faster stages)
+	  stage_rate: 1, // ticks per stage multiplier
+
+	  // energy cost for each part, cost is paid during a tick
+	  cost_root:   15,
+	  cost_stem:   30,
+	  cost_leaf:   10,
+	  cost_flower: 50,
+	  cost_seed:   40
+	});
+
+	module.exports = Growth;
+
+
+/***/ },
+/* 153 */
+/***/ function(module, exports) {
+
+	
+	var DEAD      = 0;
+	var SEED      = 1;
+	var SPROUT    = 2;
+	var MATURE    = 3;
+	var FLOWERING = 4;
+	var RIPENING  = 5;
+	var RESTING   = 6;
+
+	function Stage(update, frameset) { // Do we need a class?
+	  this.update = update;
+	  this.frameset = frameset || '';
+	}
+
+	var Dead = new Stage(function () { return DEAD; }, '');
+
+	var Seed = new Stage(function (growth, terrain) {
+	  if (growth.roots > 0 || terrain.nutrients + terrain.water > 0.6)
+	    growth.roots += growth.cost_root * (terrain.water + terrain.nutrients);
+	  if (growth.roots > 4) return SPROUT;
+	  return SEED;
+	}, 'growth-0_1');
+
+	var Sprout = new Stage(function (growth, terrain) {
+	  growth.roots += growth.cost_root * (terrain.water + 0.5 * terrain.soil);
+	  growth.stems += growth.cost_stem * (terrain.water + terrain.soil);
+	  growth.leaves += 0.5 * growth.cost_leaf * (terrain.water + 2 * terrain.light);
+	  if (growth.leaves > 5) return MATURE;
+	  return SPROUT;
+	}, 'growth-1_1');
+
+	var Mature = new Stage(function (growth, terrain) {
+	  growth.roots += 0.5 * growth.cost_root * (terrain.water + 0.5 * terrain.soil);
+	  growth.stems += 0.5 * growth.cost_stem * (terrain.water + terrain.soil);
+	  growth.leaves += 0.5 * growth.cost_leaf * (terrain.water + 2 * terrain.light);
+	  if (growth.leaves + growth.roots + growth.stems > 20 && growth.ticks > 20) return FLOWERING;
+	  return MATURE;
+	}, 'growth-2_1');
+
+	var Flowering = new Stage(function (growth, terrain) {
+	  growth.flowers += 0.5 * growth.flower_cost * (terrain.light + terrain.water + terrain.nutrients);
+	  if (growth.flowers > 3 && growth.ticks - growth.stage_ticks > 5)
+	    return RIPENING;
+	  return  FLOWERING;
+	}, 'growth-3_1');
+
+	var Ripening = new Stage(function (growth) {
+	  growth.flowers = growth.flowers - 1;
+	  growth.seeds += growth.cost_seed;
+	  if (Math.floor(growth.flowers) <= 0) return RESTING;
+	  return RIPENING;
+	}, 'growth-4_1');
+
+	var Resting = new Stage(function () {
+	  return RESTING;
+	}, 'growth-4_1');
+
+	module.exports = [Dead, Seed, Sprout, Mature, Flowering, Ripening, Resting];
 
 
 /***/ }

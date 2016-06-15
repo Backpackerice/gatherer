@@ -7,7 +7,7 @@ function Entity() {
 
 Entity.prototype.set = function (Component, data) {
   var component = new Component(data);
-  component.register(this);
+  return component.register(this);
 };
 
 Entity.prototype.destroy = function () {

@@ -5,6 +5,7 @@ var Game = require('./base/game.js');
 var GenomeSystem = require('./systems/genome.js');
 var SpriteSystem = require('./systems/sprite.js');
 var TerrainSystem = require('./systems/terrain.js');
+var GrowthSystem = require('./systems/growth.js');
 
 var game;
 var registerComponent = function (name, component) {
@@ -41,6 +42,7 @@ Gatherer.start = function () {
   // game.registerUpdate(Hunger.update.bind(Hunger));
   // game.registerUpdate(Growth.update.bind(Growth));
   game.registerUpdate(TerrainSystem.update);
+  game.registerUpdate(GrowthSystem.update);
 
   // updates in render loop
   game.registerRender(SpriteSystem.update);
@@ -49,6 +51,7 @@ Gatherer.start = function () {
   registerComponent('Sprite',  require('./components/sprite.js'));
   registerComponent('Terrain', require('./components/terrain.js'));
   registerComponent('Position',  require('./components/position.js'));
+  registerComponent('Growth',  require('./components/growth.js'));
 
   var view = game.start();
   document.body.appendChild(view);

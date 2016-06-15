@@ -22,7 +22,7 @@ var Traits = module.exports = new Component({
         if (!this[name]) this[name] = {};
         setTrait.call(this[name], def, names[1]);
       } else this[name] = def(genes);
-    };
+    }
   },
 
   setType: function (genes) {
