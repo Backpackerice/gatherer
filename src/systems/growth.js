@@ -1,5 +1,4 @@
 
-var Entity = require('../base/entity.js');
 var Growth = require('../components/growth.js');
 var Position = require('../components/position.js');
 var Terrain = require('../components/terrain.js');
@@ -53,20 +52,6 @@ function energy(growth, terrain) {
   return water + soil + light;
 }
 
-function generate(genome, x, y) {
-  var terrain = TerrainSystem.get(x, y);
-  if (!terrain) return;
-
-  var plant = new Entity();
-  plant.set(Position, {x: x, y: y});
-  plant.set(Sprite, {layer: 1});
-
-  // TODO: extract traits
-  plant.set(Growth, {});
-  return plant;
-}
-
 module.exports = {
-  update: update,
-  generate: generate
+  update: update
 };

@@ -46242,7 +46242,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	GameTime.start = function(starttime) {
 	  starttime = starttime || 0;
-	  gametime = new GameTime(starttime);
+	  gametime = new GameTime(starttime, Date.now());
 	  GameTime.unpause();
 	};
 
@@ -47004,7 +47004,6 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var Entity = __webpack_require__(146);
 	var Growth = __webpack_require__(152);
 	var Position = __webpack_require__(147);
 	var Terrain = __webpack_require__(149);
@@ -47058,22 +47057,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return water + soil + light;
 	}
 
-	function generate(genome, x, y) {
-	  var terrain = TerrainSystem.get(x, y);
-	  if (!terrain) return;
-
-	  var plant = new Entity();
-	  plant.set(Position, {x: x, y: y});
-	  plant.set(Sprite, {layer: 1});
-
-	  // TODO: extract traits
-	  plant.set(Growth, {});
-	  return plant;
-	}
-
 	module.exports = {
-	  update: update,
-	  generate: generate
+	  update: update
 	};
 
 

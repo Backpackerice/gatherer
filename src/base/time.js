@@ -56,7 +56,7 @@ GameTime.MINUTE = 1200 / 100; // 1.2 sec per minute
 
 GameTime.start = function(starttime) {
   starttime = starttime || 0;
-  gametime = new GameTime(starttime);
+  gametime = new GameTime(starttime, Date.now());
   GameTime.unpause();
 };
 
