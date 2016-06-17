@@ -25,6 +25,25 @@ function recombine(genome1, genome2) {
   return chromosomes;
 }
 
+function express(genome) {
+  var counts = [];
+  var traits = {};
+  _.each(genome.chromosomes, function (chromosome) {
+    var ts = [], c = {};
+    _.each(chromosome, function (chromatid) { ts = ts.concat(chromatid.split('.'));});
+    _.each(ts, function (t) { c[t] = c[t] ? c[t] + 1 : 1; });
+    counts.push(c);
+  });
+
+  var mergeCounts = _.cloneDeep(counts);
+  mergeCounts.push(function (a, b) { return (a > b) ? a : b; });
+  traits = _.mergeWith.apply(null, mergeCounts); // check
+  return {
+    traits: traits,
+    counts: counts
+  };
+}
+
 function* generator(library, level, ploidy, count) {
   // Generates random chromosomes given a library of genes with the
   // keys as the gene and the value as an adjustable chance weight.
@@ -77,23 +96,10 @@ function* nursery(mother, father, count) {
   }
 }
 
-// TODO: gene expression
-// express: function () {
-//   var counts = [], traits = {};
-//   _.each(this.chromosomes, function (chromosome, i) {
-//     var ts = [], c = {};
-//     _.each(chromosome, function (chromatid) { ts = ts.concat(chromatid.split('.'));});
-//     _.each(ts, function (t) { c[t] = c[t] ? c[t] + 1 : 1; });
-//     counts.push(c);
-//   });
-//   counts.push(function (a, b) { return (a > b) ? a : b; });
-//   traits = _.merge.apply(this, counts);
-//   return traits;
-// }
-
 module.exports = {
   meiosis: meiosis,
   recombine: recombine,
+  express: express,
   generator: generator,
   nursery: nursery
 };

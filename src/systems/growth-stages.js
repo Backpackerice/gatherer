@@ -7,7 +7,7 @@ var FLOWERING = 4;
 var RIPENING  = 5;
 var RESTING   = 6;
 
-function Stage(update, frameset) { // Do we need a class?
+function Stage(update, frameset) {
   this.update = update;
   this.frameset = frameset || '';
 }

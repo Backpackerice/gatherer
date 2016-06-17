@@ -46306,6 +46306,25 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return chromosomes;
 	}
 
+	function express(genome) {
+	  var counts = [];
+	  var traits = {};
+	  _.each(genome.chromosomes, function (chromosome) {
+	    var ts = [], c = {};
+	    _.each(chromosome, function (chromatid) { ts = ts.concat(chromatid.split('.'));});
+	    _.each(ts, function (t) { c[t] = c[t] ? c[t] + 1 : 1; });
+	    counts.push(c);
+	  });
+
+	  var mergeCounts = _.cloneDeep(counts);
+	  mergeCounts.push(function (a, b) { return (a > b) ? a : b; });
+	  traits = _.mergeWith.apply(null, mergeCounts); // check
+	  return {
+	    traits: traits,
+	    counts: counts
+	  };
+	}
+
 	function* generator(library, level, ploidy, count) {
 	  // Generates random chromosomes given a library of genes with the
 	  // keys as the gene and the value as an adjustable chance weight.
@@ -46358,23 +46377,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	}
 
-	// TODO: gene expression
-	// express: function () {
-	//   var counts = [], traits = {};
-	//   _.each(this.chromosomes, function (chromosome, i) {
-	//     var ts = [], c = {};
-	//     _.each(chromosome, function (chromatid) { ts = ts.concat(chromatid.split('.'));});
-	//     _.each(ts, function (t) { c[t] = c[t] ? c[t] + 1 : 1; });
-	//     counts.push(c);
-	//   });
-	//   counts.push(function (a, b) { return (a > b) ? a : b; });
-	//   traits = _.merge.apply(this, counts);
-	//   return traits;
-	// }
-
 	module.exports = {
 	  meiosis: meiosis,
 	  recombine: recombine,
+	  express: express,
 	  generator: generator,
 	  nursery: nursery
 	};
@@ -46998,23 +47004,24 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	
+	var Entity = __webpack_require__(146);
 	var Growth = __webpack_require__(152);
 	var Position = __webpack_require__(147);
 	var Terrain = __webpack_require__(149);
 	var Sprite = __webpack_require__(144);
 	var TerrainSystem = __webpack_require__(148);
 
-	var stages = __webpack_require__(153);
+	var GrowthStages = __webpack_require__(153);
 
 	function update(gametime) {
 	  var DAY = 60*24;
 	  var time = gametime.time;
 	  Growth.each(function (growth) {
 	    var entity = growth.entity;
+	    if (entity.destroyed) return;
+
 	    var position = Position.get(entity.id);
 	    var sprite = Sprite.get(entity.id);
-
-	    if (entity.destroyed || !position) return;
 
 	    var tile = TerrainSystem.get(position.x, position.y);
 	    var terrain = Terrain.get(tile.id);
@@ -47026,7 +47033,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    growth.last_tick = growth.last_tick || time;
 	    if ((time - growth.last_tick) * growth.tick_rate > DAY) {
 	      newEnergy = energy(growth, terrain, time);
-	      newStage = stages[stage].update(growth, terrain, time);
+	      newStage = GrowthStages[stage].update(growth, terrain, time);
 	      growth.death_ticks += 1 * !newEnergy;
 	      growth.last_tick = time;
 	      growth.stage_ticks++;
@@ -47036,7 +47043,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if (stage !== newStage) growth.stage_ticks = 0;
 	    growth.energy = Math.min(growth.max_energy, growth.energy + newEnergy);
 	    growth.stage = newStage;
-	    sprite.frameset = stages[newStage].frameset;
+	    sprite.frameset = GrowthStages[newStage].frameset;
 	  });
 	}
 
@@ -47051,8 +47058,22 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return water + soil + light;
 	}
 
+	function generate(genome, x, y) {
+	  var terrain = TerrainSystem.get(x, y);
+	  if (!terrain) return;
+
+	  var plant = new Entity();
+	  plant.set(Position, {x: x, y: y});
+	  plant.set(Sprite, {layer: 1});
+
+	  // TODO: extract traits
+	  plant.set(Growth, {});
+	  return plant;
+	}
+
 	module.exports = {
-	  update: update
+	  update: update,
+	  generate: generate
 	};
 
 
@@ -47114,7 +47135,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var RIPENING  = 5;
 	var RESTING   = 6;
 
-	function Stage(update, frameset) { // Do we need a class?
+	function Stage(update, frameset) {
 	  this.update = update;
 	  this.frameset = frameset || '';
 	}
