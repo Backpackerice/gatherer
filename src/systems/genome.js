@@ -1,6 +1,7 @@
 
 var _ = require('lodash');
 var random = require('../base/random.js');
+var genomeLibrary = require('./genome-library.js');
 
 function meiosis(genome) {
   var zygote = [];
@@ -47,6 +48,7 @@ function express(genome) {
 function* generator(library, level, ploidy, count) {
   // Generates random chromosomes given a library of genes with the
   // keys as the gene and the value as an adjustable chance weight.
+  library = library || genomeLibrary;
   count = count || 99;
   level = level || random.int(1, 4);
   ploidy = ploidy || 2;

@@ -5,12 +5,11 @@ var Genome = require('../src/components/genome.js');
 var Position = require('../src/components/position.js');
 var TerrainSystem = require('../src/systems/terrain.js');
 var GenomeSystem = require('../src/systems/genome.js');
-var library = require('../src/helpers/genome-library.js');
 
 describe('plant', function () {
   TerrainSystem.generate(4, 4);
   TerrainSystem.update();
-  var generator = GenomeSystem.generator(library);
+  var generator = GenomeSystem.generator();
   it('creates a plant given chromosomes, x, and y', function () {
     var chromosomes = generator.next().value;
     var plant = Plant(chromosomes, 2, 1);

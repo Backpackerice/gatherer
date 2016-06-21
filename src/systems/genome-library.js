@@ -36,4 +36,4 @@ var library = {
   'bulb': 1
 };
 
-if (module && module.exports) module.exports = library;
+module.exports = library;

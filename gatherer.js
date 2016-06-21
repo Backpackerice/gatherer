@@ -59,9 +59,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	// Systems
 	var GenomeSystem = __webpack_require__(140);
-	var SpriteSystem = __webpack_require__(143);
-	var TerrainSystem = __webpack_require__(148);
-	var GrowthSystem = __webpack_require__(151);
+	var SpriteSystem = __webpack_require__(144);
+	var TerrainSystem = __webpack_require__(149);
+	var GrowthSystem = __webpack_require__(152);
 
 	var game;
 	var registerComponent = function (name, component) {
@@ -104,10 +104,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	  game.registerRender(SpriteSystem.update);
 
 	  // Other component updates.
-	  registerComponent('Sprite',  __webpack_require__(144));
-	  registerComponent('Terrain', __webpack_require__(149));
-	  registerComponent('Position',  __webpack_require__(147));
-	  registerComponent('Growth',  __webpack_require__(152));
+	  registerComponent('Sprite',  __webpack_require__(145));
+	  registerComponent('Terrain', __webpack_require__(150));
+	  registerComponent('Position',  __webpack_require__(148));
+	  registerComponent('Growth',  __webpack_require__(153));
 
 	  var view = game.start();
 	  document.body.appendChild(view);
@@ -46282,6 +46282,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _ = __webpack_require__(2);
 	var random = __webpack_require__(141);
+	var genomeLibrary = __webpack_require__(143);
 
 	function meiosis(genome) {
 	  var zygote = [];
@@ -46328,6 +46329,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	function* generator(library, level, ploidy, count) {
 	  // Generates random chromosomes given a library of genes with the
 	  // keys as the gene and the value as an adjustable chance weight.
+	  library = library || genomeLibrary;
 	  count = count || 99;
 	  level = level || random.int(1, 4);
 	  ploidy = ploidy || 2;
@@ -46626,11 +46628,56 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 143 */
+/***/ function(module, exports) {
+
+	var library = {
+	  'growth': 10,
+
+	  'red': 5,
+	  'yellow': 5,
+	  'blue': 5,
+
+	  'root': 3,
+	  'stem': 3,
+	  'leaf': 3,
+	  'flower': 3,
+	  'seed': 3,
+
+	  'edible_stem': 3,
+	  'edible_seed': 3,
+	  'edible_root': 3,
+	  'edible_leaf': 4,
+	  'fruit': 1,
+	  'staple': 1,
+	  'tuber': 1,
+
+	  'dicot': 2,
+	  'monocot': 2,
+
+	  'fibrous': 2,
+	  'rind': 1,
+	  'bolls': 1,
+
+	  'poison_leaf': 2,
+	  'poison_seed': 1,
+	  'poison_root': 1,
+	  'blooming': 1,
+
+	  'nectar': 1,
+	  'wood': 1,
+	  'bulb': 1
+	};
+
+	module.exports = library;
+
+
+/***/ },
+/* 144 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var Sprite = __webpack_require__(144);
-	var Position = __webpack_require__(147);
+	var Sprite = __webpack_require__(145);
+	var Position = __webpack_require__(148);
 	var PIXI = __webpack_require__(4);
 	var _ = __webpack_require__(2);
 
@@ -46726,11 +46773,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 144 */
+/* 145 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var Component = __webpack_require__(145);
+	var Component = __webpack_require__(146);
 
 	var Sprite = new Component({
 	  frameset: null,
@@ -46751,11 +46798,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 145 */
+/* 146 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(2);
-	var Entity = __webpack_require__(146);
+	var Entity = __webpack_require__(147);
 
 	// Component Factory
 	// -----------------
@@ -46867,7 +46914,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 146 */
+/* 147 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(2);
@@ -46890,11 +46937,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 147 */
+/* 148 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var Component = __webpack_require__(145);
+	var Component = __webpack_require__(146);
 
 	var Position = new Component({
 	  x: -1, // grid positions
@@ -46911,14 +46958,14 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 148 */
+/* 149 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var Entity = __webpack_require__(146);
-	var Terrain = __webpack_require__(149);
-	var Position = __webpack_require__(147);
-	var Sprite = __webpack_require__(144);
-	var pairing = __webpack_require__(150);
+	var Entity = __webpack_require__(147);
+	var Terrain = __webpack_require__(150);
+	var Position = __webpack_require__(148);
+	var Sprite = __webpack_require__(145);
+	var pairing = __webpack_require__(151);
 	var random = __webpack_require__(141);
 	var tiles = {};
 
@@ -46976,11 +47023,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 149 */
+/* 150 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//var _ = require('lodash');
-	var Component = __webpack_require__(145);
+	var Component = __webpack_require__(146);
 
 	var Terrain = new Component({
 	  water: 0,
@@ -46992,7 +47039,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 150 */
+/* 151 */
 /***/ function(module, exports) {
 
 	// from http://sachiniscool.blogspot.com/2011/06/cantor-pairing-function-and-reversal.html
@@ -47000,17 +47047,17 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 151 */
+/* 152 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var Growth = __webpack_require__(152);
-	var Position = __webpack_require__(147);
-	var Terrain = __webpack_require__(149);
-	var Sprite = __webpack_require__(144);
-	var TerrainSystem = __webpack_require__(148);
+	var Growth = __webpack_require__(153);
+	var Position = __webpack_require__(148);
+	var Terrain = __webpack_require__(150);
+	var Sprite = __webpack_require__(145);
+	var TerrainSystem = __webpack_require__(149);
 
-	var GrowthStages = __webpack_require__(153);
+	var GrowthStages = __webpack_require__(154);
 
 	function update(gametime) {
 	  var DAY = 60*24;
@@ -47063,11 +47110,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 152 */
+/* 153 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var Component = __webpack_require__(145);
+	var Component = __webpack_require__(146);
 
 	var Growth = new Component({
 	  stage:   1,
@@ -47108,7 +47155,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 153 */
+/* 154 */
 /***/ function(module, exports) {
 
 	

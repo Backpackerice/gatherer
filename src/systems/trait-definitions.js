@@ -8,7 +8,6 @@ var combine = _.curry(function (genes, geneSet) {
 
 var definitions = {
   dud: function (g) { return _.size(g) === 0; },
-  monocot: function (g) { return g.monocot && !g.dicot; },
 
   'color red': combine(['red']),
   'color yellow': combine(['yellow']),
@@ -42,4 +41,4 @@ var definitions = {
   'root output': combine(['root', 1])
 };
 
-if (module && module.exports) module.exports = definitions;
+module.exports = definitions;
