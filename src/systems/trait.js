@@ -1,13 +1,31 @@
 var _ = require('lodash');
-var GenomeSystem = require('./genome-system.js');
 var types = require('./trait-types.js');
 var definitions = require('./trait-definitions.js');
 
 // TODO: reduce complexity of setting expressions and traits
 // Maybe make traits set up components instead
 // Should also reduce the duplication of concerns in the plant creator
+function express(genome) {
+  var counts = [];
+  var traits = {};
+  _.each(genome.chromosomes, function (chromosome) {
+    var ts = [], c = {};
+    _.each(chromosome, function (chromatid) { ts = ts.concat(chromatid.split('.'));});
+    _.each(ts, function (t) { c[t] = c[t] ? c[t] + 1 : 1; });
+    counts.push(c);
+  });
+
+  var mergeCounts = _.cloneDeep(counts);
+  mergeCounts.push(function (a, b) { return (a > b) ? a : b; });
+  traits = _.mergeWith.apply(null, mergeCounts);
+  return {
+    traits: traits,
+    counts: counts
+  };
+}
+
 function type(genome) {
-  var expression = GenomeSystem.express(genome);
+  var expression = express(genome);
   var traits = expression.traits;
   var counts = expression.counts;
   var output;
@@ -25,7 +43,7 @@ function type(genome) {
 }
 
 function define(genome) {
-  var expression = GenomeSystem.express(genome);
+  var expression = express(genome);
   var output = {};
   var traits = expression.traits;
 
@@ -44,5 +62,6 @@ function define(genome) {
 
 module.exports = {
   type: type,
-  define: define
+  define: define,
+  express: express
 };

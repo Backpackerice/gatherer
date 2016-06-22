@@ -5,7 +5,7 @@ var Position = require('../components/position.js');
 var Sprite = require('../components/sprite.js');
 var Genome = require('../components/genome.js');
 var TerrainSystem = require('../systems/terrain.js');
-var GenomeSystem = require('../systems/genome.js');
+var TraitSystem = require('../systems/trait.js');
 
 function Plant(chromosomes, x, y) {
   var terrain = TerrainSystem.get(x, y);
@@ -17,7 +17,7 @@ function Plant(chromosomes, x, y) {
   plant.set(Position, {x: x, y: y});
   plant.set(Sprite, {layer: 1});
 
-  var expression = GenomeSystem.express(genome);
+  var expression = TraitSystem.express(genome);
   var adjustCost = expression.counts.growth;
 
   growth.cost_root = growth.cost_root / adjustCost;

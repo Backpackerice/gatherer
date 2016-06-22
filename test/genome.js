@@ -37,15 +37,6 @@ describe('genome system', function () {
     var chromosomes = GenomeSystem.recombine(genome1, genome2);
     expect(chromosomes).to.deep.equal([[1, 2], [1, 2]]);
   });
-
-  it('can construct the expression of genes', function () {
-    var genome = new Genome({chromosomes: [['test.foo', ''], ['foo', 'foo.bar']]});
-    var expression = GenomeSystem.express(genome);
-    expect(expression).to.deep.equal({
-      traits: {test: 1, foo: 2, '': 1, bar: 1},
-      counts: [{test: 1, foo: 1, '': 1}, {foo: 2, bar: 1}]
-    });
-  });
 });
 
 describe('genome generators', function () {
