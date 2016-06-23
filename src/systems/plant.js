@@ -1,11 +1,14 @@
 
+var _ = require('lodash');
 var Entity = require('../base/entity.js');
 var Growth = require('../components/growth.js');
 var Position = require('../components/position.js');
 var Sprite = require('../components/sprite.js');
 var Genome = require('../components/genome.js');
-var TerrainSystem = require('../systems/terrain.js');
-var TraitSystem = require('../systems/trait.js');
+var GenomeSystem = require('./genome.js');
+var TerrainSystem = require('./terrain.js');
+
+var types = require('./plant-types.js');
 
 function Plant(chromosomes, x, y) {
   var terrain = TerrainSystem.get(x, y);
@@ -17,7 +20,7 @@ function Plant(chromosomes, x, y) {
   plant.set(Position, {x: x, y: y});
   plant.set(Sprite, {layer: 1});
 
-  var expression = TraitSystem.express(genome);
+  var expression = GenomeSystem.express(genome);
   var adjustCost = expression.counts.growth;
 
   growth.cost_root = growth.cost_root / adjustCost;
@@ -28,5 +31,22 @@ function Plant(chromosomes, x, y) {
 
   return plant;
 }
+
+Plant.type = function (expression) {
+  var traits = expression.traits;
+  var counts = expression.counts;
+  var output;
+
+  _.every(types, function (type) {
+    var isType = type.check(traits);
+    if (isType) {
+      output = type.name;
+      type.bonus(traits, counts);
+    }
+    return !isType;
+  });
+
+  return output;
+};
 
 module.exports = Plant;

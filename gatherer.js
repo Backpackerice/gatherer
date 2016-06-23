@@ -46307,6 +46307,25 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return chromosomes;
 	}
 
+	function express(genome) {
+	  var counts = [];
+	  var traits = {};
+	  _.each(genome.chromosomes, function (chromosome) {
+	    var ts = [], c = {};
+	    _.each(chromosome, function (chromatid) { ts = ts.concat(chromatid.split('.'));});
+	    _.each(ts, function (t) { c[t] = c[t] ? c[t] + 1 : 1; });
+	    counts.push(c);
+	  });
+
+	  var mergeCounts = _.cloneDeep(counts);
+	  mergeCounts.push(function (a, b) { return (a > b) ? a : b; });
+	  traits = _.mergeWith.apply(null, mergeCounts);
+	  return {
+	    traits: traits,
+	    counts: counts
+	  };
+	}
+
 	function* generator(library, level, ploidy, count) {
 	  // Generates random chromosomes given a library of genes with the
 	  // keys as the gene and the value as an adjustable chance weight.
@@ -46363,6 +46382,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = {
 	  meiosis: meiosis,
 	  recombine: recombine,
+	  express: express,
 	  generator: generator,
 	  nursery: nursery
 	};
