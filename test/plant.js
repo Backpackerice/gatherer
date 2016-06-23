@@ -1,6 +1,7 @@
 
 var expect = require('chai').expect;
 var Plant = require('../src/systems/plant.js');
+var Growth = require('../src/components/growth.js');
 var Genome = require('../src/components/genome.js');
 var Position = require('../src/components/position.js');
 var TerrainSystem = require('../src/systems/terrain.js');
@@ -13,8 +14,11 @@ describe('plant', function () {
   it('creates a plant given chromosomes, x, and y', function () {
     var chromosomes = generator.next().value;
     var plant = Plant(chromosomes, 2, 1);
+
+    var growth = Growth.get(plant.id);
     var genome = Genome.get(plant.id);
     var position = Position.get(plant.id);
+
     expect(genome.chromosomes).to.deep.equal(chromosomes);
     expect(position.x).to.equal(2);
     expect(position.y).to.equal(1);

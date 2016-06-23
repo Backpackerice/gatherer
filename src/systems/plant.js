@@ -8,8 +8,6 @@ var Genome = require('../components/genome.js');
 var GenomeSystem = require('./genome.js');
 var TerrainSystem = require('./terrain.js');
 
-var types = require('./plant-types.js');
-
 function Plant(chromosomes, x, y) {
   var terrain = TerrainSystem.get(x, y);
   if (!terrain) return;
@@ -21,27 +19,32 @@ function Plant(chromosomes, x, y) {
   plant.set(Sprite, {layer: 1});
 
   var expression = GenomeSystem.express(genome);
-  var adjustCost = expression.counts.growth;
 
-  growth.cost_root = growth.cost_root / adjustCost;
-  growth.cost_stem = growth.cost_stem / adjustCost;
-  growth.cost_leaf = growth.cost_leaf / adjustCost;
-  growth.cost_flower = growth.cost_flower / adjustCost;
-  growth.cost_seed = growth.cost_seed / adjustCost;
+  Plant.define('growth', growth, expression);
 
   return plant;
 }
 
+Plant.define = function (key, component, expression) {
+  var definitions = require('./plant-definitions.js');
+  var definition = definitions[key];
+  var value;
+  for (var attr in definition) {
+    value = component[attr];
+    component[attr] = definition[attr](value, expression);
+  }
+};
+
 Plant.type = function (expression) {
+  var types = require('./plant-types.js');
   var traits = expression.traits;
   var counts = expression.counts;
   var output;
 
   _.every(types, function (type) {
-    var isType = type.check(traits);
+    var isType = type.check(traits, counts);
     if (isType) {
       output = type.name;
-      type.bonus(traits, counts);
     }
     return !isType;
   });

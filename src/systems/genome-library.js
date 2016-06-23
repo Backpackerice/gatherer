@@ -1,6 +1,4 @@
 var library = {
-  'growth': 10,
-
   'red': 5,
   'yellow': 5,
   'blue': 5,
