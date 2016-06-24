@@ -58,10 +58,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	var Game = __webpack_require__(1);
 
 	// Systems
-	var GenomeSystem = __webpack_require__(140);
-	var SpriteSystem = __webpack_require__(144);
-	var TerrainSystem = __webpack_require__(149);
-	var GrowthSystem = __webpack_require__(152);
+	var SpriteSystem = __webpack_require__(140);
+	var TerrainSystem = __webpack_require__(145);
+	var GrowthSystem = __webpack_require__(150);
 
 	var game;
 	var registerComponent = function (name, component) {
@@ -104,10 +103,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	  game.registerRender(SpriteSystem.update);
 
 	  // Other component updates.
-	  registerComponent('Sprite',  __webpack_require__(145));
-	  registerComponent('Terrain', __webpack_require__(150));
-	  registerComponent('Position',  __webpack_require__(148));
-	  registerComponent('Growth',  __webpack_require__(153));
+	  registerComponent('Sprite',  __webpack_require__(141));
+	  registerComponent('Terrain', __webpack_require__(146));
+	  registerComponent('Position',  __webpack_require__(144));
+	  registerComponent('Growth',  __webpack_require__(151));
 
 	  var view = game.start();
 	  document.body.appendChild(view);
@@ -46280,111 +46279,99 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	
+	var Sprite = __webpack_require__(141);
+	var Position = __webpack_require__(144);
+	var PIXI = __webpack_require__(4);
 	var _ = __webpack_require__(2);
-	var random = __webpack_require__(141);
-	var genomeLibrary = __webpack_require__(143);
 
-	function meiosis(genome) {
-	  var zygote = [];
-	  if (genome.ploidy % 2 === 0) {
-	    genome.chromosomes.forEach(function (chromosome) {
-	      var c = _.clone(chromosome);
-	      for (var i = 0; i < chromosome.length / 2; i++) {
-	        var chromatid = c.splice(random.int(0, c.length), 1);
-	        zygote.push(chromatid[0]);
-	      }
+	var scaleVal;
+	var scale;
+	var tileSize;
+	var layers;
+	var frames;
+	var pixisprites;
+
+	function setup(stage, spritesheet) {
+	  scaleVal = 4;
+	  scale = {x: scaleVal, y: scaleVal};
+	  tileSize = spritesheet.meta.tile * scaleVal;
+	  layers = [ // 4 layers
+	    new PIXI.Container(), // 0: terrain
+	    new PIXI.Container(), // 1: behind player
+	    new PIXI.Container(), // 2: at player
+	    new PIXI.Container() // 3: in front of player
+	  ];
+	  frames = parseFrames(spritesheet.frames);
+	  pixisprites = [];
+	  _.each(layers, function (layer) { stage.addChild(layer); });
+	}
+
+	function update() {
+	  Sprite.each(function (sprite, i) {
+	    var entity = sprite.entity;
+	    var position = Position.get(entity.id);
+
+	    // TODO: deal with subsprites
+	    var pixisprite = getPixi(i);
+	    var frameset = getFrame(sprite.frameset);
+	    var texture = PIXI.Texture.fromFrame(frameset);
+	    var x = position.x;
+	    var y = position.y;
+	    var baselineY = pixisprite.frame ? y + 1 - pixisprite.frame.height / Sprite.tile : y;
+	    var modifiedX = toPosition(x);
+	    var modifiedY = pixisprite ? toPosition(baselineY) : toPosition(y);
+	    var layer = getLayer(sprite.layer);
+
+	    if (entity.destroyed) {
+	      pixisprite.parent.removeChild(pixisprite);
+	      return;
+	    }
+
+	    if (pixisprite.parent) {
+	      pixisprite.parent.removeChild(pixisprite);
+	    }
+	    layer.addChild(pixisprite);
+	    pixisprite.position.set(modifiedX, modifiedY);
+	    pixisprite.texture = texture;
+	  });
+	}
+
+	function parseFrames(frames) {
+	  return _.chain(frames).map(function (frame, i) {
+	    frame.index = i;
+	    return frame;
+	  }).groupBy('name')
+	  .mapValues(function (set) {
+	    return _.map(set, function (frame) {
+	      return frame.index;
 	    });
-	  }
-	  return zygote;
+	  }).value();
 	}
 
-	function recombine(genome1, genome2) {
-	  var chromosomes = [];
-	  if (genome1.chromosomes.length === genome2.chromosomes.length) {
-	    chromosomes = _.zip(meiosis(genome1), meiosis(genome2));
-	    _.remove(chromosomes, function (chromosome) { return chromosome.length === 0; });
+	function getPixi(i) {
+	  if (!pixisprites[i]) {
+	    pixisprites[i] = new PIXI.Sprite(PIXI.Texture.fromFrame(0));
+	    pixisprites[i].scale = scale;
 	  }
-	  return chromosomes;
+	  return pixisprites[i];
 	}
 
-	function express(genome) {
-	  var counts = [];
-	  var traits = {};
-	  _.each(genome.chromosomes, function (chromosome) {
-	    var ts = [], c = {};
-	    _.each(chromosome, function (chromatid) { ts = ts.concat(chromatid.split('.'));});
-	    _.each(ts, function (t) { c[t] = c[t] ? c[t] + 1 : 1; });
-	    counts.push(c);
-	  });
-
-	  var mergeCounts = _.cloneDeep(counts);
-	  mergeCounts.push(function (a, b) { return (a > b) ? a : b; });
-	  traits = _.mergeWith.apply(null, mergeCounts);
-	  return {
-	    traits: traits,
-	    counts: counts
-	  };
+	function toPosition(x) {
+	  return x * tileSize;
 	}
 
-	function* generator(library, level, ploidy, count) {
-	  // Generates random chromosomes given a library of genes with the
-	  // keys as the gene and the value as an adjustable chance weight.
-	  library = library || genomeLibrary;
-	  count = count || 99;
-	  level = level || random.int(1, 4);
-	  ploidy = ploidy || 2;
-	  var index = 0;
-	  var chance = 0;
-	  var total = _.reduce(library, function (sum, num) { return sum + num; });
-	  var chances = _.map(library, function (count, gene) {
-	    chance += count / total;
-	    return {gene: gene, chance: chance};
-	  });
-	  var chromosomes;
-	  var randomGene = function () {
-	    var chance = random.random(), gene = _.last(chances).gene;
-	    for (var c = 0; c < chances.length; c++) {
-	      if (chance < chances[c].chance) {
-	        gene = chances[c].gene;
-	        break;
-	      }
-	    }
-	    return gene;
-	  };
-
-	  while(index < count) {
-	    chromosomes = [];
-	    for (var cs = 0; cs < level * 4; cs++) {
-	      var chromosome = [];
-	      for (var ct = 0; ct < ploidy; ct++) {
-	        var chromatid = [];
-	        for (var t = 0; t < random.int(0, 4 + level); t++) {
-	          chromatid.push(randomGene());
-	        }
-	        chromosome.push(chromatid.join('.'));
-	      }
-	      chromosomes.push(chromosome);
-	    }
-	    index++;
-	    yield chromosomes;
-	  }
+	function getFrame(frame) {
+	  if (_.isNumber(frame)) return frame;
+	  return _.sample(frames[frame]);
 	}
 
-	function* nursery(mother, father, count) {
-	  count = count || 99;
-	  var index = 0;
-	  while(index < count) {
-	    index++;
-	    yield recombine(mother, father);
-	  }
+	function getLayer(layer) {
+	  return layers[layer];
 	}
 
 	module.exports = {
-	  meiosis: meiosis,
-	  recombine: recombine,
-	  express: express,
-	  generator: generator,
-	  nursery: nursery
+	  setup: setup,
+	  update: update
 	};
 
 
@@ -46393,7 +46380,281 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var MersenneTwister = __webpack_require__(142);
+	var Component = __webpack_require__(142);
+
+	var Sprite = new Component({
+	  frameset: null,
+	  layer: null,
+	  subsprites: []
+	});
+
+	Sprite.addSubsprite = function (sprite, frameset, x, y, index) {
+	  sprite[index] = {
+	    frameset: frameset,
+	    x: y,
+	    y: y
+	  };
+	  return sprite;
+	};
+
+	module.exports = Sprite;
+
+
+/***/ },
+/* 142 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var _ = __webpack_require__(2);
+	var Entity = __webpack_require__(143);
+
+	// Component Factory
+	// -----------------
+	// @param defaults    default data
+	// @param properties  optional object properties
+	//
+	var Component = function (defaults, properties) {
+	  var entities = {}; // hidden entity map
+	  var pool = []; // pool of destroyed components for re-use
+
+	  var eachAccepted = function (fn) {
+	    var accepted = Object.keys(defaults);
+	    accepted.forEach(fn);
+	  };
+
+	  // Additional functions for registering with entities.
+	  var prototype = {
+	    set: function (data) {
+	      data = data || {};
+	      eachAccepted(function (key) {
+	        if (key in data) {
+	          this[key] = data[key];
+	        } else if (typeof accepted === 'object') {
+	          this[key] = _.cloneDeep(defaults[key]);
+	        }
+	      }.bind(this));
+	      return this;
+	    },
+
+	    register: function (entity) {
+	      entities[entity.id] = this;
+	      this.entity = entity;
+	      if (this.initialize) this.initialize();
+
+	      return this;
+	    },
+
+	    unregister: function () {
+	      var entity = this.entity;
+	      this.stopListening();
+	      this.entity = null;
+	      entities[entity.id] = null;
+	      pool.push(this);
+	      return this;
+	    },
+
+	    toJSON: function () {
+	      var json = {};
+	      eachAccepted(function (key) {
+	        json[key] = this[key];
+	      }.bind(this));
+	      json.entity = this.entity;
+	      return json;
+	    }
+	  };
+
+	  var ComponentClass = function (data) {
+	    var component;
+	    if (pool.length) {
+	      component = pool.pop();
+	      component.set(data);
+	      return component;
+	    }
+
+	    this.set(data);
+	    return this;
+	  };
+
+	  ComponentClass.prototype = Object.create(
+	    _.extend(prototype, defaults),
+	    properties
+	  );
+
+	  // Static functions
+	  ComponentClass.get = function (eId) {
+	    if (eId === undefined) return entities;
+	    else if (eId instanceof Entity) return entities[eId.id];
+	    else return entities[eId];
+	  };
+
+	  ComponentClass.create = function (data) {
+	    return new this(data);
+	  };
+
+	  ComponentClass.each = function (fn, ctx) {
+	    _.each(this.get(), fn, ctx);
+	  };
+
+	  ComponentClass.filter = function (fn, ctx) {
+	    _.filter(this.get(), fn, ctx);
+	  };
+
+	  ComponentClass.cleanup = function () {
+	    this.each(function (component) {
+	      if (component.entity.destroyed) {
+	        component.unregister();
+	        return;
+	      }
+	    });
+	  };
+
+	  return ComponentClass;
+	};
+
+	// @alias Component
+	Component.create = Component;
+
+	module.exports = Component;
+
+
+/***/ },
+/* 143 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var _ = __webpack_require__(2);
+
+	function Entity() {
+	  this.id = _.uniqueId('e');
+	  return this;
+	}
+
+	Entity.prototype.set = function (Component, data) {
+	  var component = new Component(data);
+	  return component.register(this);
+	};
+
+	Entity.prototype.destroy = function () {
+	  this.destroyed = true;
+	};
+
+	module.exports = Entity;
+
+
+/***/ },
+/* 144 */
+/***/ function(module, exports, __webpack_require__) {
+
+	
+	var Component = __webpack_require__(142);
+
+	var Position = new Component({
+	  x: -1, // grid positions
+	  y: -1
+	});
+
+	Position.find = function (x, y) {
+	  return Position.filter(function (position) {
+	    return position.x === x && position.y === y;
+	  });
+	};
+
+	module.exports = Position;
+
+
+/***/ },
+/* 145 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var Entity = __webpack_require__(143);
+	var Terrain = __webpack_require__(146);
+	var Position = __webpack_require__(144);
+	var Sprite = __webpack_require__(141);
+	var pairing = __webpack_require__(147);
+	var random = __webpack_require__(148);
+	var tiles = {};
+
+	function update() {
+	  Terrain.each(function (terrain) {
+	    var entity = terrain.entity;
+	    var position = Position.get(entity.id);
+	    var x = position.x;
+	    var y = position.y;
+	    var pos = pairing(x, y);
+	    if (!position) return;
+
+	    if (entity.destroyed && tiles[pos] === entity) {
+	      tiles[pos] = null;
+	      return;
+	    }
+
+	    if (tiles[pos] !== entity) {
+	      tiles[pos] = entity;
+	    }
+	  });
+	}
+
+	function get(x, y) {
+	  return tiles[pairing(x, y)];
+	}
+
+	function generate(cols, rows) {
+	  for (var x = 0; x < cols; x++) {
+	    for (var y = 0; y < rows; y++) {
+	      var type = soil; // always soil for now
+	      var water = random.int(type.water[0], type.water[1]);
+	      var nutrients = random.int(type.nutrients[0], type.nutrients[1]);
+
+	      var entity = new Entity();
+	      entity.set(Terrain, {water: water, nutrients: nutrients});
+	      entity.set(Position, {x: x, y: y});
+	      entity.set(Sprite, {layer: 0, frameset: type.frameSet});
+	    }
+	  }
+	}
+
+	module.exports = {
+	  update: update,
+	  get: get,
+	  generate: generate
+	};
+
+	// terrain types to randomly generate
+	var soil = {
+	  frameSet: 'tile-soil',
+	  water: [20, 80],
+	  nutrients: [60, 100]
+	};
+
+
+/***/ },
+/* 146 */
+/***/ function(module, exports, __webpack_require__) {
+
+	//var _ = require('lodash');
+	var Component = __webpack_require__(142);
+
+	var Terrain = new Component({
+	  water: 0,
+	  nutrients: 0,
+	  light: 0
+	});
+
+	module.exports = Terrain;
+
+
+/***/ },
+/* 147 */
+/***/ function(module, exports) {
+
+	// from http://sachiniscool.blogspot.com/2011/06/cantor-pairing-function-and-reversal.html
+	var pairing = module.exports = function (x, y) { return ((x + y) * (x + y + 1)) / 2 + y; };
+
+
+/***/ },
+/* 148 */
+/***/ function(module, exports, __webpack_require__) {
+
+	
+	var MersenneTwister = __webpack_require__(149);
 	var mt = new MersenneTwister();
 
 	function seed(value) {
@@ -46416,7 +46677,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 142 */
+/* 149 */
 /***/ function(module, exports) {
 
 	/*
@@ -46627,435 +46888,17 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 143 */
-/***/ function(module, exports) {
-
-	var library = {
-	  'red': 5,
-	  'yellow': 5,
-	  'blue': 5,
-
-	  'root': 3,
-	  'stem': 3,
-	  'leaf': 3,
-	  'flower': 3,
-	  'seed': 3,
-
-	  'edible_stem': 3,
-	  'edible_seed': 3,
-	  'edible_root': 3,
-	  'edible_leaf': 4,
-	  'fruit': 1,
-	  'staple': 1,
-	  'tuber': 1,
-
-	  'dicot': 2,
-	  'monocot': 2,
-
-	  'fibrous': 2,
-	  'rind': 1,
-	  'bolls': 1,
-
-	  'poison_leaf': 2,
-	  'poison_seed': 1,
-	  'poison_root': 1,
-	  'blooming': 1,
-
-	  'nectar': 1,
-	  'wood': 1,
-	  'bulb': 1
-	};
-
-	module.exports = library;
-
-
-/***/ },
-/* 144 */
-/***/ function(module, exports, __webpack_require__) {
-
-	
-	var Sprite = __webpack_require__(145);
-	var Position = __webpack_require__(148);
-	var PIXI = __webpack_require__(4);
-	var _ = __webpack_require__(2);
-
-	var scaleVal;
-	var scale;
-	var tileSize;
-	var layers;
-	var frames;
-	var pixisprites;
-
-	function setup(stage, spritesheet) {
-	  scaleVal = 4;
-	  scale = {x: scaleVal, y: scaleVal};
-	  tileSize = spritesheet.meta.tile * scaleVal;
-	  layers = [ // 4 layers
-	    new PIXI.Container(), // 0: terrain
-	    new PIXI.Container(), // 1: behind player
-	    new PIXI.Container(), // 2: at player
-	    new PIXI.Container() // 3: in front of player
-	  ];
-	  frames = parseFrames(spritesheet.frames);
-	  pixisprites = [];
-	  _.each(layers, function (layer) { stage.addChild(layer); });
-	}
-
-	function update() {
-	  Sprite.each(function (sprite, i) {
-	    var entity = sprite.entity;
-	    var position = Position.get(entity.id);
-
-	    // TODO: deal with subsprites
-	    var pixisprite = getPixi(i);
-	    var frameset = getFrame(sprite.frameset);
-	    var texture = PIXI.Texture.fromFrame(frameset);
-	    var x = position.x;
-	    var y = position.y;
-	    var baselineY = pixisprite.frame ? y + 1 - pixisprite.frame.height / Sprite.tile : y;
-	    var modifiedX = toPosition(x);
-	    var modifiedY = pixisprite ? toPosition(baselineY) : toPosition(y);
-	    var layer = getLayer(sprite.layer);
-
-	    if (entity.destroyed) {
-	      pixisprite.parent.removeChild(pixisprite);
-	      return;
-	    }
-
-	    if (pixisprite.parent) {
-	      pixisprite.parent.removeChild(pixisprite);
-	    }
-	    layer.addChild(pixisprite);
-	    pixisprite.position.set(modifiedX, modifiedY);
-	    pixisprite.texture = texture;
-	  });
-	}
-
-	function parseFrames(frames) {
-	  return _.chain(frames).map(function (frame, i) {
-	    frame.index = i;
-	    return frame;
-	  }).groupBy('name')
-	  .mapValues(function (set) {
-	    return _.map(set, function (frame) {
-	      return frame.index;
-	    });
-	  }).value();
-	}
-
-	function getPixi(i) {
-	  if (!pixisprites[i]) {
-	    pixisprites[i] = new PIXI.Sprite(PIXI.Texture.fromFrame(0));
-	    pixisprites[i].scale = scale;
-	  }
-	  return pixisprites[i];
-	}
-
-	function toPosition(x) {
-	  return x * tileSize;
-	}
-
-	function getFrame(frame) {
-	  if (_.isNumber(frame)) return frame;
-	  return _.sample(frames[frame]);
-	}
-
-	function getLayer(layer) {
-	  return layers[layer];
-	}
-
-	module.exports = {
-	  setup: setup,
-	  update: update
-	};
-
-
-/***/ },
-/* 145 */
-/***/ function(module, exports, __webpack_require__) {
-
-	
-	var Component = __webpack_require__(146);
-
-	var Sprite = new Component({
-	  frameset: null,
-	  layer: null,
-	  subsprites: []
-	});
-
-	Sprite.addSubsprite = function (sprite, frameset, x, y, index) {
-	  sprite[index] = {
-	    frameset: frameset,
-	    x: y,
-	    y: y
-	  };
-	  return sprite;
-	};
-
-	module.exports = Sprite;
-
-
-/***/ },
-/* 146 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var _ = __webpack_require__(2);
-	var Entity = __webpack_require__(147);
-
-	// Component Factory
-	// -----------------
-	// @param defaults    default data
-	// @param properties  optional object properties
-	//
-	var Component = function (defaults, properties) {
-	  var entities = {}; // hidden entity map
-	  var pool = []; // pool of destroyed components for re-use
-
-	  var eachAccepted = function (fn) {
-	    var accepted = Object.keys(defaults);
-	    accepted.forEach(fn);
-	  };
-
-	  // Additional functions for registering with entities.
-	  var prototype = {
-	    set: function (data) {
-	      data = data || {};
-	      eachAccepted(function (key) {
-	        if (key in data) {
-	          this[key] = data[key];
-	        } else if (typeof accepted === 'object') {
-	          this[key] = _.cloneDeep(defaults[key]);
-	        }
-	      }.bind(this));
-	      return this;
-	    },
-
-	    register: function (entity) {
-	      entities[entity.id] = this;
-	      this.entity = entity;
-	      if (this.initialize) this.initialize();
-
-	      return this;
-	    },
-
-	    unregister: function () {
-	      var entity = this.entity;
-	      this.stopListening();
-	      this.entity = null;
-	      entities[entity.id] = null;
-	      pool.push(this);
-	      return this;
-	    },
-
-	    toJSON: function () {
-	      var json = {};
-	      eachAccepted(function (key) {
-	        json[key] = this[key];
-	      }.bind(this));
-	      json.entity = this.entity;
-	      return json;
-	    }
-	  };
-
-	  var ComponentClass = function (data) {
-	    var component;
-	    if (pool.length) {
-	      component = pool.pop();
-	      component.set(data);
-	      return component;
-	    }
-
-	    this.set(data);
-	    return this;
-	  };
-
-	  ComponentClass.prototype = Object.create(
-	    _.extend(prototype, defaults),
-	    properties
-	  );
-
-	  // Static functions
-	  ComponentClass.get = function (eId) {
-	    if (eId === undefined) return entities;
-	    else if (eId instanceof Entity) return entities[eId.id];
-	    else return entities[eId];
-	  };
-
-	  ComponentClass.create = function (data) {
-	    return new this(data);
-	  };
-
-	  ComponentClass.each = function (fn, ctx) {
-	    _.each(this.get(), fn, ctx);
-	  };
-
-	  ComponentClass.filter = function (fn, ctx) {
-	    _.filter(this.get(), fn, ctx);
-	  };
-
-	  ComponentClass.cleanup = function () {
-	    this.each(function (component) {
-	      if (component.entity.destroyed) {
-	        component.unregister();
-	        return;
-	      }
-	    });
-	  };
-
-	  return ComponentClass;
-	};
-
-	// @alias Component
-	Component.create = Component;
-
-	module.exports = Component;
-
-
-/***/ },
-/* 147 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var _ = __webpack_require__(2);
-
-	function Entity() {
-	  this.id = _.uniqueId('e');
-	  return this;
-	}
-
-	Entity.prototype.set = function (Component, data) {
-	  var component = new Component(data);
-	  return component.register(this);
-	};
-
-	Entity.prototype.destroy = function () {
-	  this.destroyed = true;
-	};
-
-	module.exports = Entity;
-
-
-/***/ },
-/* 148 */
-/***/ function(module, exports, __webpack_require__) {
-
-	
-	var Component = __webpack_require__(146);
-
-	var Position = new Component({
-	  x: -1, // grid positions
-	  y: -1
-	});
-
-	Position.find = function (x, y) {
-	  return Position.filter(function (position) {
-	    return position.x === x && position.y === y;
-	  });
-	};
-
-	module.exports = Position;
-
-
-/***/ },
-/* 149 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var Entity = __webpack_require__(147);
-	var Terrain = __webpack_require__(150);
-	var Position = __webpack_require__(148);
-	var Sprite = __webpack_require__(145);
-	var pairing = __webpack_require__(151);
-	var random = __webpack_require__(141);
-	var tiles = {};
-
-	function update() {
-	  Terrain.each(function (terrain) {
-	    var entity = terrain.entity;
-	    var position = Position.get(entity.id);
-	    var x = position.x;
-	    var y = position.y;
-	    var pos = pairing(x, y);
-	    if (!position) return;
-
-	    if (entity.destroyed && tiles[pos] === entity) {
-	      tiles[pos] = null;
-	      return;
-	    }
-
-	    if (tiles[pos] !== entity) {
-	      tiles[pos] = entity;
-	    }
-	  });
-	}
-
-	function get(x, y) {
-	  return tiles[pairing(x, y)];
-	}
-
-	function generate(cols, rows) {
-	  for (var x = 0; x < cols; x++) {
-	    for (var y = 0; y < rows; y++) {
-	      var type = soil; // always soil for now
-	      var water = random.int(type.water[0], type.water[1]);
-	      var nutrients = random.int(type.nutrients[0], type.nutrients[1]);
-
-	      var entity = new Entity();
-	      entity.set(Terrain, {water: water, nutrients: nutrients});
-	      entity.set(Position, {x: x, y: y});
-	      entity.set(Sprite, {layer: 0, frameset: type.frameSet});
-	    }
-	  }
-	}
-
-	module.exports = {
-	  update: update,
-	  get: get,
-	  generate: generate
-	};
-
-	// terrain types to randomly generate
-	var soil = {
-	  frameSet: 'tile-soil',
-	  water: [20, 80],
-	  nutrients: [60, 100]
-	};
-
-
-/***/ },
 /* 150 */
 /***/ function(module, exports, __webpack_require__) {
 
-	//var _ = require('lodash');
-	var Component = __webpack_require__(146);
-
-	var Terrain = new Component({
-	  water: 0,
-	  nutrients: 0,
-	  light: 0
-	});
-
-	module.exports = Terrain;
-
-
-/***/ },
-/* 151 */
-/***/ function(module, exports) {
-
-	// from http://sachiniscool.blogspot.com/2011/06/cantor-pairing-function-and-reversal.html
-	var pairing = module.exports = function (x, y) { return ((x + y) * (x + y + 1)) / 2 + y; };
-
-
-/***/ },
-/* 152 */
-/***/ function(module, exports, __webpack_require__) {
-
 	
-	var Growth = __webpack_require__(153);
-	var Position = __webpack_require__(148);
-	var Terrain = __webpack_require__(150);
-	var Sprite = __webpack_require__(145);
-	var TerrainSystem = __webpack_require__(149);
+	var Growth = __webpack_require__(151);
+	var Position = __webpack_require__(144);
+	var Terrain = __webpack_require__(146);
+	var Sprite = __webpack_require__(141);
+	var TerrainSystem = __webpack_require__(145);
 
-	var GrowthStages = __webpack_require__(154);
+	var GrowthStages = __webpack_require__(152);
 
 	function update(gametime) {
 	  var DAY = 60*24;
@@ -47108,11 +46951,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 153 */
+/* 151 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var Component = __webpack_require__(146);
+	var Component = __webpack_require__(142);
 
 	var Growth = new Component({
 	  stage:   1,
@@ -47153,7 +46996,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 154 */
+/* 152 */
 /***/ function(module, exports) {
 
 	

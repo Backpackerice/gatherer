@@ -9,9 +9,9 @@ module.exports = {
 };
 
 function getCost(attr) {
-  return function (cost, expression) {
-    var traits = Math.max(expression.traits, 5);
-    var attrTrait = traits[attr] || 0;
-    return cost - cost*(attrTrait / 10);
+  return function (base, expression) {
+    var traits = expression.traits;
+    var attrTrait = Math.min(traits[attr] || 0, 5);
+    return base - base*(attrTrait / 10);
   };
 }

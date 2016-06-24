@@ -2,7 +2,6 @@ var Gatherer = {};
 var Game = require('./base/game.js');
 
 // Systems
-var GenomeSystem = require('./systems/genome.js');
 var SpriteSystem = require('./systems/sprite.js');
 var TerrainSystem = require('./systems/terrain.js');
 var GrowthSystem = require('./systems/growth.js');

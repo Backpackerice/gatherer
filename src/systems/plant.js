@@ -32,6 +32,7 @@ Plant.define = function (key, component, expression) {
   for (var attr in definition) {
     value = component[attr];
     component[attr] = definition[attr](value, expression);
+    console.log(attr, component[attr], definition[attr](value, expression));
   }
 };
 
