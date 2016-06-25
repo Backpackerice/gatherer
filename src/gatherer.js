@@ -18,28 +18,10 @@ Gatherer.start = function () {
     ready: function (game, loader, resources) {
       SpriteSystem.setup(game.stage, resources['assets/sprites.json'].data);
       TerrainSystem.generate(12, 12);
-      // TODO: better interactions setup
-      // var actions = new Actions(),
-      //     player = new Entity([actions, new Hunger(), new Health()]),
-      //     nursery = new Entity([new Useable(), new PlantGenerator()]);
-
-      // _.each(Environment.tiles, function (tile) {
-      //   Sprite.get(tile.entity).update({ // add interactions
-      //     buttonMode: true,
-      //     interactive: true,
-      //     click: function (sprite) {
-      //       if (tile[Environment.FOREGROUND]) console.log(actions.harvest(tile));
-      //       else actions.plant(nursery, tile);
-      //     }
-      //   });
-      // });
     }
   });
 
   // updates in update loop
-  // game.registerUpdate(Health.update.bind(Health));
-  // game.registerUpdate(Hunger.update.bind(Hunger));
-  // game.registerUpdate(Growth.update.bind(Growth));
   game.registerUpdate(TerrainSystem.update);
   game.registerUpdate(GrowthSystem.update);
 
@@ -49,8 +31,10 @@ Gatherer.start = function () {
   // Other component updates.
   registerComponent('Sprite',  require('./components/sprite.js'));
   registerComponent('Terrain', require('./components/terrain.js'));
+  registerComponent('Movable',  require('./components/movable.js'));
   registerComponent('Position',  require('./components/position.js'));
   registerComponent('Growth',  require('./components/growth.js'));
+  registerComponent('Genome',  require('./components/genome.js'));
 
   var view = game.start();
   document.body.appendChild(view);

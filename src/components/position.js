@@ -1,5 +1,5 @@
 
-var Component = require('../base/component2.js');
+var Component = require('../base/component.js');
 
 var Position = new Component({
   x: -1, // grid positions

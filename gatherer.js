@@ -74,28 +74,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	    ready: function (game, loader, resources) {
 	      SpriteSystem.setup(game.stage, resources['assets/sprites.json'].data);
 	      TerrainSystem.generate(12, 12);
-	      // TODO: better interactions setup
-	      // var actions = new Actions(),
-	      //     player = new Entity([actions, new Hunger(), new Health()]),
-	      //     nursery = new Entity([new Useable(), new PlantGenerator()]);
-
-	      // _.each(Environment.tiles, function (tile) {
-	      //   Sprite.get(tile.entity).update({ // add interactions
-	      //     buttonMode: true,
-	      //     interactive: true,
-	      //     click: function (sprite) {
-	      //       if (tile[Environment.FOREGROUND]) console.log(actions.harvest(tile));
-	      //       else actions.plant(nursery, tile);
-	      //     }
-	      //   });
-	      // });
 	    }
 	  });
 
 	  // updates in update loop
-	  // game.registerUpdate(Health.update.bind(Health));
-	  // game.registerUpdate(Hunger.update.bind(Hunger));
-	  // game.registerUpdate(Growth.update.bind(Growth));
 	  game.registerUpdate(TerrainSystem.update);
 	  game.registerUpdate(GrowthSystem.update);
 
@@ -105,8 +87,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	  // Other component updates.
 	  registerComponent('Sprite',  __webpack_require__(141));
 	  registerComponent('Terrain', __webpack_require__(146));
+	  registerComponent('Movable',  __webpack_require__(153));
 	  registerComponent('Position',  __webpack_require__(144));
 	  registerComponent('Growth',  __webpack_require__(151));
+	  registerComponent('Genome',  __webpack_require__(154));
 
 	  var view = game.start();
 	  document.body.appendChild(view);
@@ -47057,6 +47041,47 @@ return /******/ (function(modules) { // webpackBootstrap
 	}, 'growth-4_1');
 
 	module.exports = [Dead, Seed, Sprout, Mature, Flowering, Ripening, Resting];
+
+
+/***/ },
+/* 153 */
+/***/ function(module, exports, __webpack_require__) {
+
+	
+	var Component = __webpack_require__(142);
+
+	var Movable = new Component({
+	  moving: 0,  // Movable.STILL
+	  speed:  0   // base speed in tiles per second
+	});
+
+	Movable.STILL = 0;
+	Movable.LEFT  = 1;
+	Movable.UP    = 2;
+	Movable.RIGHT = 3;
+	Movable.DOWN  = 4;
+
+	module.exports = Movable;
+
+
+/***/ },
+/* 154 */
+/***/ function(module, exports, __webpack_require__) {
+
+	
+	var Component = __webpack_require__(142);
+
+	var Genome = new Component({
+	  chromosomes: [[]]
+	}, {
+	  ploidy: {
+	    get: function () {
+	      return this.chromosomes.length && this.chromosomes[0].length;
+	    }
+	  }
+	});
+
+	module.exports = Genome;
 
 
 /***/ }

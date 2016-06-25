@@ -1,5 +1,5 @@
 
-var Component = require('../base/component2.js');
+var Component = require('../base/component.js');
 
 var Movable = new Component({
   moving: 0,  // Movable.STILL

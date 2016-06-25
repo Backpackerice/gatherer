@@ -1,63 +1,110 @@
 var _ = require('lodash');
 var Entity = require('./entity.js');
 
-var Component = module.exports = function (prototype) {
+// Component Factory
+// -----------------
+// @param defaults    default data
+// @param properties  optional object properties
+//
+var Component = function (defaults, properties) {
   var entities = {}; // hidden entity map
   var pool = []; // pool of destroyed components for re-use
 
-  // Prototype options
-  if (prototype.define) { // Add any object definitions
-    _.each(prototype.define, function (def, key) {
-      var options = {};
-      if (typeof def === 'object') _.extend(options, def);
-      else if (typeof def === 'function') options.get = def;
-      else options.value = def;
+  var eachAccepted = function (fn) {
+    var accepted = Object.keys(defaults);
+    accepted.forEach(fn);
+  };
 
-      Object.defineProperty(prototype, key, options);
-    });
-    delete prototype.define;
-  }
+  // Additional functions for registering with entities.
+  var prototype = {
+    set: function (data) {
+      data = data || {};
+      eachAccepted(function (key) {
+        if (key in data) {
+          this[key] = data[key];
+        } else if (typeof accepted === 'object') {
+          this[key] = _.cloneDeep(defaults[key]);
+        }
+      }.bind(this));
+      return this;
+    },
 
-  var proto = {
     register: function (entity) {
       entities[entity.id] = this;
       this.entity = entity;
       if (this.initialize) this.initialize();
 
-      this.on('destroy', this.destroy);
       return this;
     },
-    destroy: function () {
+
+    unregister: function () {
+      var entity = this.entity;
       this.stopListening();
       this.entity = null;
-      entities[this.entity.id] = null;
+      entities[entity.id] = null;
       pool.push(this);
       return this;
+    },
+
+    toJSON: function () {
+      var json = {};
+      eachAccepted(function (key) {
+        json[key] = this[key];
+      }.bind(this));
+      json.entity = this.entity;
+      return json;
     }
   };
 
-  var component = prototype.constructor;
-  component.prototype = _.extend(prototype, proto);
+  var ComponentClass = function (data) {
+    var component;
+    if (pool.length) {
+      component = pool.pop();
+      component.set(data);
+      return component;
+    }
 
-  // General component management
-  component.get = function (eId) {
+    this.set(data);
+    return this;
+  };
+
+  ComponentClass.prototype = Object.create(
+    _.extend(prototype, defaults),
+    properties
+  );
+
+  // Static functions
+  ComponentClass.get = function (eId) {
     if (eId === undefined) return entities;
     else if (eId instanceof Entity) return entities[eId.id];
     else return entities[eId];
   };
-  component.create = function () {
-    var component;
-    if (pool.length) component = pool.pop();
-    else component = new this();
 
-    this.prototype.constructor.apply(component, arguments);
-    return component;
+  ComponentClass.create = function (data) {
+    return new this(data);
   };
 
-  component.each = function (fn, ctx) { _.each(this.get(), fn, ctx); };
-  component.filter = function (fn, ctx) { _.filter(this.get(), fn, ctx); };
+  ComponentClass.each = function (fn, ctx) {
+    _.each(this.get(), fn, ctx);
+  };
 
-  return component;
+  ComponentClass.filter = function (fn, ctx) {
+    _.filter(this.get(), fn, ctx);
+  };
+
+  ComponentClass.cleanup = function () {
+    this.each(function (component) {
+      if (component.entity.destroyed) {
+        component.unregister();
+        return;
+      }
+    });
+  };
+
+  return ComponentClass;
 };
 
-Component.create = function (proto) { return new this(proto); };
+// @alias Component
+Component.create = Component;
+
+module.exports = Component;

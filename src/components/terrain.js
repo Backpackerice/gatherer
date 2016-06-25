@@ -1,5 +1,5 @@
 //var _ = require('lodash');
-var Component = require('../base/component2.js');
+var Component = require('../base/component.js');
 
 var Terrain = new Component({
   water: 0,
