@@ -63,3 +63,63 @@ describe('plant definitions', function () {
     expect(growth.cost_flower).to.equal(expected);
   });
 });
+
+describe('plant types', function () {
+  var expression;
+
+  beforeEach(function () {
+    expression = {
+      traits: {
+        tuber: 2,
+        seed: 1,
+        flower: 2,
+        '': 1,
+        edible_stem: 1,
+        edible_leaf: 1,
+        red: 1,
+        fruit: 1,
+        yellow: 1,
+        edible_seed: 1
+      },
+      counts: [
+        {tuber: 2, seed: 1, flower: 2},
+        {'': 1, edible_stem: 1, seed: 1, edible_leaf: 1},
+        {seed: 1, red: 1, fruit: 1},
+        {yellow: 1, edible_seed: 1, seed: 1, '': 1}
+      ]
+    };
+  });
+
+  it('can determine the grain type', function () {
+    expression.traits.monocot = 1;
+    expression.traits.grain = 1;
+    expect(Plant.type(expression)).to.equal('grain');
+  });
+
+  it('can determine the grass type', function () {
+    expression.traits.monocot = 1;
+    expect(Plant.type(expression)).to.equal('grass');
+  });
+
+  it('can determine the tree type', function () {
+    expression.traits.stem = 4;
+    expression.traits.root = 4;
+    expression.traits.wood = 1;
+    expect(Plant.type(expression)).to.equal('tree');
+  });
+
+  it('can determine the shrub type', function () {
+    expression.traits.leaf = 3;
+    expression.traits.wood = 1;
+    expect(Plant.type(expression)).to.equal('shrub');
+  });
+
+  it('can determine the stalk type', function () {
+    expression.traits.stem = 4;
+    expect(Plant.type(expression)).to.equal('stalk');
+  });
+
+  it('can determine the herb type', function () {
+    expect(Plant.type(expression)).to.equal('herb');
+  });
+});

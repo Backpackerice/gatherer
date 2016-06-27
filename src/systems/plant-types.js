@@ -1,7 +1,8 @@
 var types = [
   {
     name: 'grain',
-    check: function (traits) { return traits.monocot && !traits.dicot && traits.grain; }
+    check: function (traits) {
+      return traits.monocot && !traits.dicot && traits.grain; }
   },
   {
     name: 'grass',
@@ -10,17 +11,17 @@ var types = [
 
   {
     name: 'tree',
-    check: function (traits) { return traits.growth > 1 && traits.wood; }
+    check: function (traits) { return traits.root > 2 && traits.stem > 3 && traits.wood; }
   },
 
   {
     name: 'shrub',
-    check: function (traits) { return traits.growth && traits.wood; }
+    check: function (traits) { return traits.leaf > 2 && traits.wood; }
   },
 
   {
     name: 'stalk',
-    check: function (traits) { return traits.growth > 1; }
+    check: function (traits) { return traits.stem > 3; }
   },
 
   {
