@@ -5,6 +5,7 @@ var Game = require('./base/game.js');
 var SpriteSystem = require('./systems/sprite.js');
 var TerrainSystem = require('./systems/terrain.js');
 var GrowthSystem = require('./systems/growth.js');
+var MovementSystem = require('./systems/movement.js');
 
 var game;
 var registerComponent = function (name, component) {
@@ -24,6 +25,7 @@ Gatherer.start = function () {
   // updates in update loop
   game.registerUpdate(TerrainSystem.update);
   game.registerUpdate(GrowthSystem.update);
+  game.registerUpdate(MovementSystem.update);
 
   // updates in render loop
   game.registerRender(SpriteSystem.update);

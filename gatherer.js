@@ -61,6 +61,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var SpriteSystem = __webpack_require__(140);
 	var TerrainSystem = __webpack_require__(145);
 	var GrowthSystem = __webpack_require__(150);
+	var MovementSystem = __webpack_require__(153);
 
 	var game;
 	var registerComponent = function (name, component) {
@@ -80,6 +81,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  // updates in update loop
 	  game.registerUpdate(TerrainSystem.update);
 	  game.registerUpdate(GrowthSystem.update);
+	  game.registerUpdate(MovementSystem.update);
 
 	  // updates in render loop
 	  game.registerRender(SpriteSystem.update);
@@ -87,10 +89,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	  // Other component updates.
 	  registerComponent('Sprite',  __webpack_require__(141));
 	  registerComponent('Terrain', __webpack_require__(146));
-	  registerComponent('Movable',  __webpack_require__(153));
+	  registerComponent('Movable',  __webpack_require__(154));
 	  registerComponent('Position',  __webpack_require__(144));
 	  registerComponent('Growth',  __webpack_require__(151));
-	  registerComponent('Genome',  __webpack_require__(154));
+	  registerComponent('Genome',  __webpack_require__(155));
 
 	  var view = game.start();
 	  document.body.appendChild(view);
@@ -47048,6 +47050,45 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	
+	var Position = __webpack_require__(144);
+	var Movable = __webpack_require__(154);
+
+	var lastTick;
+
+	function update(gametime) {
+	  var thisTick = gametime.realtime;
+	  if (!lastTick) {
+	    lastTick = thisTick;
+	  }
+
+	  var dTime = thisTick - lastTick;
+
+	  Movable.each(function (movable) {
+	    var entity = movable.entity;
+	    var position = Position.get(entity.id);
+	    var dMove = dTime * movable.speed;
+
+	    if (!position || entity.destroyed) return;
+
+	    if (movable.moving) {
+	      var dX = (movable.moving - 2) % 2 * dMove;
+	      var dY = (movable.moving - 3) % 2 * dMove;
+	      position.x = position.x + dX;
+	      position.y = position.y + dY;
+	    }
+	  });
+	}
+
+	module.exports = {
+	  update: update
+	};
+
+
+/***/ },
+/* 154 */
+/***/ function(module, exports, __webpack_require__) {
+
+	
 	var Component = __webpack_require__(142);
 
 	var Movable = new Component({
@@ -47065,7 +47106,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 154 */
+/* 155 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
