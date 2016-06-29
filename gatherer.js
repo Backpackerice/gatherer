@@ -58,10 +58,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	var Game = __webpack_require__(1);
 
 	// Systems
-	var SpriteSystem = __webpack_require__(140);
-	var TerrainSystem = __webpack_require__(145);
-	var GrowthSystem = __webpack_require__(150);
-	var MovementSystem = __webpack_require__(153);
+	var ControlSystem = __webpack_require__(140);
+	var SpriteSystem = __webpack_require__(141);
+	var TerrainSystem = __webpack_require__(146);
+	var GrowthSystem = __webpack_require__(151);
+	var MovementSystem = __webpack_require__(154);
 
 	var game;
 	var registerComponent = function (name, component) {
@@ -74,6 +75,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    assets: ['assets/sprites.json'],
 	    ready: function (game, loader, resources) {
 	      SpriteSystem.setup(game.stage, resources['assets/sprites.json'].data);
+	      ControlSystem.setup(document.body);
 	      TerrainSystem.generate(12, 12);
 	    }
 	  });
@@ -87,12 +89,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	  game.registerRender(SpriteSystem.update);
 
 	  // Other component updates.
-	  registerComponent('Sprite',  __webpack_require__(141));
-	  registerComponent('Terrain', __webpack_require__(146));
-	  registerComponent('Movable',  __webpack_require__(154));
-	  registerComponent('Position',  __webpack_require__(144));
-	  registerComponent('Growth',  __webpack_require__(151));
-	  registerComponent('Genome',  __webpack_require__(155));
+	  registerComponent('Sprite',  __webpack_require__(142));
+	  registerComponent('Terrain', __webpack_require__(147));
+	  registerComponent('Movable',  __webpack_require__(155));
+	  registerComponent('Position',  __webpack_require__(145));
+	  registerComponent('Growth',  __webpack_require__(152));
+	  registerComponent('Genome',  __webpack_require__(156));
 
 	  var view = game.start();
 	  document.body.appendChild(view);
@@ -46262,11 +46264,53 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 140 */
+/***/ function(module, exports) {
+
+	var map = {
+	  '37': ['moveLeft'],
+	  '38': ['moveUp'],
+	  '39': ['moveRight'],
+	  '40': ['moveDown']
+	};
+
+	var active = {};
+
+	function setup(el) {
+	  el.addEventListener('keydown', function (e) {
+	    activate(map[e.keyCode]);
+	  });
+
+	  el.addEventListener('keyup', function (e) {
+	    deactivate(map[e.keyCode]);
+	  });
+	}
+
+	function activate(actions) {
+	  if (!actions) return;
+	  actions.forEach(function (action) {
+	    active[action] = true;
+	  });
+	}
+
+	function deactivate(actions) {
+	  if (!actions) return;
+	  actions.forEach(function (action) {
+	    active[action] = null;
+	  });
+	}
+
+	module.exports = {
+	  setup: setup
+	};
+
+
+/***/ },
+/* 141 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var Sprite = __webpack_require__(141);
-	var Position = __webpack_require__(144);
+	var Sprite = __webpack_require__(142);
+	var Position = __webpack_require__(145);
 	var PIXI = __webpack_require__(4);
 	var _ = __webpack_require__(2);
 
@@ -46362,11 +46406,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 141 */
+/* 142 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var Component = __webpack_require__(142);
+	var Component = __webpack_require__(143);
 
 	var Sprite = new Component({
 	  frameset: null,
@@ -46387,11 +46431,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 142 */
+/* 143 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(2);
-	var Entity = __webpack_require__(143);
+	var Entity = __webpack_require__(144);
 
 	// Component Factory
 	// -----------------
@@ -46503,7 +46547,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 143 */
+/* 144 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(2);
@@ -46526,11 +46570,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 144 */
+/* 145 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var Component = __webpack_require__(142);
+	var Component = __webpack_require__(143);
 
 	var Position = new Component({
 	  x: -1, // grid positions
@@ -46547,15 +46591,15 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 145 */
+/* 146 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var Entity = __webpack_require__(143);
-	var Terrain = __webpack_require__(146);
-	var Position = __webpack_require__(144);
-	var Sprite = __webpack_require__(141);
-	var pairing = __webpack_require__(147);
-	var random = __webpack_require__(148);
+	var Entity = __webpack_require__(144);
+	var Terrain = __webpack_require__(147);
+	var Position = __webpack_require__(145);
+	var Sprite = __webpack_require__(142);
+	var pairing = __webpack_require__(148);
+	var random = __webpack_require__(149);
 	var tiles = {};
 
 	function update() {
@@ -46612,11 +46656,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 146 */
+/* 147 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//var _ = require('lodash');
-	var Component = __webpack_require__(142);
+	var Component = __webpack_require__(143);
 
 	var Terrain = new Component({
 	  water: 0,
@@ -46628,7 +46672,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 147 */
+/* 148 */
 /***/ function(module, exports) {
 
 	// from http://sachiniscool.blogspot.com/2011/06/cantor-pairing-function-and-reversal.html
@@ -46636,11 +46680,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 148 */
+/* 149 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var MersenneTwister = __webpack_require__(149);
+	var MersenneTwister = __webpack_require__(150);
 	var mt = new MersenneTwister();
 
 	function seed(value) {
@@ -46663,7 +46707,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 149 */
+/* 150 */
 /***/ function(module, exports) {
 
 	/*
@@ -46874,17 +46918,17 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 150 */
+/* 151 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var Growth = __webpack_require__(151);
-	var Position = __webpack_require__(144);
-	var Terrain = __webpack_require__(146);
-	var Sprite = __webpack_require__(141);
-	var TerrainSystem = __webpack_require__(145);
+	var Growth = __webpack_require__(152);
+	var Position = __webpack_require__(145);
+	var Terrain = __webpack_require__(147);
+	var Sprite = __webpack_require__(142);
+	var TerrainSystem = __webpack_require__(146);
 
-	var GrowthStages = __webpack_require__(152);
+	var GrowthStages = __webpack_require__(153);
 
 	function update(gametime) {
 	  var DAY = 60*24;
@@ -46937,11 +46981,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 151 */
+/* 152 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var Component = __webpack_require__(142);
+	var Component = __webpack_require__(143);
 
 	var Growth = new Component({
 	  stage:   1,
@@ -46982,7 +47026,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 152 */
+/* 153 */
 /***/ function(module, exports) {
 
 	
@@ -47046,12 +47090,12 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 153 */
+/* 154 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var Position = __webpack_require__(144);
-	var Movable = __webpack_require__(154);
+	var Position = __webpack_require__(145);
+	var Movable = __webpack_require__(155);
 
 	var lastTick;
 
@@ -47085,11 +47129,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 154 */
+/* 155 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var Component = __webpack_require__(142);
+	var Component = __webpack_require__(143);
 
 	var Movable = new Component({
 	  moving: 0,  // Movable.STILL
@@ -47106,11 +47150,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 155 */
+/* 156 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var Component = __webpack_require__(142);
+	var Component = __webpack_require__(143);
 
 	var Genome = new Component({
 	  chromosomes: [[]]

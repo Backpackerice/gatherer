@@ -2,6 +2,7 @@ var Gatherer = {};
 var Game = require('./base/game.js');
 
 // Systems
+var ControlSystem = require('./systems/controls.js');
 var SpriteSystem = require('./systems/sprite.js');
 var TerrainSystem = require('./systems/terrain.js');
 var GrowthSystem = require('./systems/growth.js');
@@ -18,6 +19,7 @@ Gatherer.start = function () {
     assets: ['assets/sprites.json'],
     ready: function (game, loader, resources) {
       SpriteSystem.setup(game.stage, resources['assets/sprites.json'].data);
+      ControlSystem.setup(document.body);
       TerrainSystem.generate(12, 12);
     }
   });
