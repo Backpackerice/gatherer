@@ -10,18 +10,19 @@ function update(gametime) {
     lastTick = thisTick;
   }
 
-  var dTime = thisTick - lastTick;
+  var dTime = (thisTick - lastTick) / 1000;
 
   Movable.each(function (movable) {
     var entity = movable.entity;
     var position = Position.get(entity.id);
     var dMove = dTime * movable.speed;
+    var sum = Math.abs(movable.direction[0]) + Math.abs(movable.direction[1]);
 
     if (!position || entity.destroyed) return;
 
-    if (movable.moving) {
-      var dX = (movable.moving - 2) % 2 * dMove;
-      var dY = (movable.moving - 3) % 2 * dMove;
+    if (sum) {
+      var dX = movable.direction[0] * dMove / Math.sqrt(sum);
+      var dY = movable.direction[1] * dMove / Math.sqrt(sum);
       position.x = position.x + dX;
       position.y = position.y + dY;
     }

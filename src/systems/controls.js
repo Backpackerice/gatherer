@@ -6,6 +6,7 @@ var map = {
 };
 
 var active = {};
+var character;
 
 function setup(el) {
   el.addEventListener('keydown', function (e) {
@@ -31,6 +32,33 @@ function deactivate(actions) {
   });
 }
 
+function control(entity) {
+  character = entity;
+}
+
+function update() {
+  if (!character || character.destroyed) return;
+  var Movable = require('../components/movable.js');
+  var movable = Movable.get(character.id);
+
+  movable.direction = [0, 0]; // reset
+  if (active.moveLeft) {
+    movable.direction[0] -= 1;
+  }
+  if (active.moveRight) {
+    movable.direction[0] += 1;
+  }
+  if (active.moveUp) {
+    movable.direction[1] -= 1;
+  }
+  if (active.moveDown) {
+    movable.direction[1] += 1;
+  }
+}
+
 module.exports = {
-  setup: setup
+  active: active,
+  setup: setup,
+  control: control,
+  update: update
 };
