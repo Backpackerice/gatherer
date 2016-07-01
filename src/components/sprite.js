@@ -7,13 +7,12 @@ var Sprite = new Component({
   subsprites: []
 });
 
-Sprite.addSubsprite = function (sprite, frameset, x, y, index) {
-  sprite[index] = {
+Sprite.Subsprite = function (frameset, x, y) {
+  return {
     frameset: frameset,
-    x: y,
+    x: x,
     y: y
   };
-  return sprite;
 };
 
 module.exports = Sprite;

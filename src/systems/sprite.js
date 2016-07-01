@@ -16,10 +16,10 @@ function setup(stage, spritesheet) {
   scale = {x: scaleVal, y: scaleVal};
   tileSize = spritesheet.meta.tile * scaleVal;
   layers = [ // 4 layers
-    new PIXI.Container(), // 0: terrain
-    new PIXI.Container(), // 1: behind player
-    new PIXI.Container(), // 2: at player
-    new PIXI.Container() // 3: in front of player
+    new PIXI.Container(), // 0: background
+    new PIXI.Container(), // 1: foreground
+    new PIXI.Container(), // 2: foreground (player)
+    new PIXI.Container()  // 3: interface
   ];
   frames = parseFrames(spritesheet.frames);
   pixisprites = [];

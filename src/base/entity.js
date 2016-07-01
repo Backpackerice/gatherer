@@ -10,6 +10,10 @@ Entity.prototype.set = function (Component, data) {
   return component.register(this);
 };
 
+Entity.prototype.get = function (Component) {
+  return Component.get(this.id);
+};
+
 Entity.prototype.destroy = function () {
   this.destroyed = true;
 };

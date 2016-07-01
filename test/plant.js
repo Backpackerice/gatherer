@@ -20,10 +20,10 @@ describe('plant', function () {
 
     var plant = Plant(chromosomes, 2, 1);
 
-    var growth = Growth.get(plant.id);
-    var genome = Genome.get(plant.id);
-    var position = Position.get(plant.id);
-    var sprite = Sprite.get(plant.id);
+    var growth   = plant.get(Growth);
+    var genome   = plant.get(Genome);
+    var position = plant.get(Position);
+    var sprite   = plant.get(Sprite);
 
     expect(growth).to.be.defined;
     expect(sprite).to.be.defined;

@@ -46481,6 +46481,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return component.register(this);
 	};
 
+	Entity.prototype.get = function (Component) {
+	  return Component.get(this.id);
+	};
+
 	Entity.prototype.destroy = function () {
 	  this.destroyed = true;
 	};
@@ -46510,10 +46514,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	  scale = {x: scaleVal, y: scaleVal};
 	  tileSize = spritesheet.meta.tile * scaleVal;
 	  layers = [ // 4 layers
-	    new PIXI.Container(), // 0: terrain
-	    new PIXI.Container(), // 1: behind player
-	    new PIXI.Container(), // 2: at player
-	    new PIXI.Container() // 3: in front of player
+	    new PIXI.Container(), // 0: background
+	    new PIXI.Container(), // 1: foreground
+	    new PIXI.Container(), // 2: foreground (player)
+	    new PIXI.Container()  // 3: interface
 	  ];
 	  frames = parseFrames(spritesheet.frames);
 	  pixisprites = [];
@@ -46602,13 +46606,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	  subsprites: []
 	});
 
-	Sprite.addSubsprite = function (sprite, frameset, x, y, index) {
-	  sprite[index] = {
+	Sprite.Subsprite = function (frameset, x, y) {
+	  return {
 	    frameset: frameset,
-	    x: y,
+	    x: x,
 	    y: y
 	  };
-	  return sprite;
 	};
 
 	module.exports = Sprite;

@@ -7,7 +7,7 @@ function Character(x, y) {
   var character = new Entity();
   character.set(Movable, {speed: 1});
   character.set(Position, {x: x, y: y});
-  character.set(Sprite);
+  character.set(Sprite, {layer: 2});
 
   return character;
 }
