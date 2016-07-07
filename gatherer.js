@@ -59,10 +59,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	// Systems
 	var ControlSystem = __webpack_require__(140);
-	var SpriteSystem = __webpack_require__(144);
-	var TerrainSystem = __webpack_require__(147);
-	var GrowthSystem = __webpack_require__(152);
-	var MovementSystem = __webpack_require__(155);
+	var SpriteSystem = __webpack_require__(141);
+	var TerrainSystem = __webpack_require__(146);
+	var GrowthSystem = __webpack_require__(151);
+	var MovementSystem = __webpack_require__(154);
 
 	var game;
 	var registerComponent = function (name, component) {
@@ -89,11 +89,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	  game.registerRender(SpriteSystem.update);
 
 	  // Other component updates.
-	  registerComponent('Sprite',  __webpack_require__(145));
-	  registerComponent('Terrain', __webpack_require__(148));
-	  registerComponent('Movable',  __webpack_require__(141));
-	  registerComponent('Position',  __webpack_require__(146));
-	  registerComponent('Growth',  __webpack_require__(153));
+	  registerComponent('Sprite',  __webpack_require__(142));
+	  registerComponent('Terrain', __webpack_require__(147));
+	  registerComponent('Movable',  __webpack_require__(155));
+	  registerComponent('Position',  __webpack_require__(145));
+	  registerComponent('Growth',  __webpack_require__(152));
 	  registerComponent('Genome',  __webpack_require__(156));
 
 	  var view = game.start();
@@ -46266,7 +46266,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 140 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
 	var map = {
 	  '37': ['moveLeft'],
@@ -46302,35 +46302,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	  });
 	}
 
-	function control(entity) {
-	  character = entity;
-	}
-
-	function update() {
-	  if (!character || character.destroyed) return;
-	  var Movable = __webpack_require__(141);
-	  var movable = Movable.get(character.id);
-
-	  movable.direction = [0, 0]; // reset
-	  if (active.moveLeft) {
-	    movable.direction[0] -= 1;
+	function entity(entity) {
+	  if (entity) {
+	    character = entity;
 	  }
-	  if (active.moveRight) {
-	    movable.direction[0] += 1;
-	  }
-	  if (active.moveUp) {
-	    movable.direction[1] -= 1;
-	  }
-	  if (active.moveDown) {
-	    movable.direction[1] += 1;
-	  }
+	  return character;
 	}
 
 	module.exports = {
 	  active: active,
 	  setup: setup,
-	  control: control,
-	  update: update
+	  entity: entity
 	};
 
 
@@ -46339,22 +46321,132 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var Component = __webpack_require__(142);
+	var Sprite = __webpack_require__(142);
+	var Position = __webpack_require__(145);
+	var PIXI = __webpack_require__(4);
+	var _ = __webpack_require__(2);
 
-	var Movable = new Component({
-	  direction: [0, 0],
-	  speed: 0 // base speed in tiles per second
-	});
+	var scaleVal;
+	var scale;
+	var tileSize;
+	var layers;
+	var frames;
+	var pixisprites;
 
-	module.exports = Movable;
+	function setup(stage, spritesheet) {
+	  scaleVal = 4;
+	  scale = {x: scaleVal, y: scaleVal};
+	  tileSize = spritesheet.meta.tile * scaleVal;
+	  layers = [ // 4 layers
+	    new PIXI.Container(), // 0: background
+	    new PIXI.Container(), // 1: foreground
+	    new PIXI.Container(), // 2: foreground (player)
+	    new PIXI.Container()  // 3: interface
+	  ];
+	  frames = parseFrames(spritesheet.frames);
+	  pixisprites = [];
+	  _.each(layers, function (layer) { stage.addChild(layer); });
+	}
+
+	function update() {
+	  Sprite.each(function (sprite, i) {
+	    var entity = sprite.entity;
+	    var position = Position.get(entity.id);
+
+	    // TODO: deal with subsprites
+	    var pixisprite = getPixi(i);
+	    var frameset = getFrame(sprite.frameset);
+	    var texture = PIXI.Texture.fromFrame(frameset);
+	    var x = position.x;
+	    var y = position.y;
+	    var baselineY = pixisprite.frame ? y + 1 - pixisprite.frame.height / Sprite.tile : y;
+	    var modifiedX = toPosition(x);
+	    var modifiedY = pixisprite ? toPosition(baselineY) : toPosition(y);
+	    var layer = getLayer(sprite.layer);
+
+	    if (entity.destroyed) {
+	      pixisprite.parent.removeChild(pixisprite);
+	      return;
+	    }
+
+	    if (pixisprite.parent) {
+	      pixisprite.parent.removeChild(pixisprite);
+	    }
+	    layer.addChild(pixisprite);
+	    pixisprite.position.set(modifiedX, modifiedY);
+	    pixisprite.texture = texture;
+	  });
+	}
+
+	function parseFrames(frames) {
+	  return _.chain(frames).map(function (frame, i) {
+	    frame.index = i;
+	    return frame;
+	  }).groupBy('name')
+	  .mapValues(function (set) {
+	    return _.map(set, function (frame) {
+	      return frame.index;
+	    });
+	  }).value();
+	}
+
+	function getPixi(i) {
+	  if (!pixisprites[i]) {
+	    pixisprites[i] = new PIXI.Sprite(PIXI.Texture.fromFrame(0));
+	    pixisprites[i].scale = scale;
+	  }
+	  return pixisprites[i];
+	}
+
+	function toPosition(x) {
+	  return x * tileSize;
+	}
+
+	function getFrame(frame) {
+	  if (_.isNumber(frame)) return frame;
+	  return _.sample(frames[frame]);
+	}
+
+	function getLayer(layer) {
+	  return layers[layer];
+	}
+
+	module.exports = {
+	  setup: setup,
+	  update: update
+	};
 
 
 /***/ },
 /* 142 */
 /***/ function(module, exports, __webpack_require__) {
 
+	
+	var Component = __webpack_require__(143);
+
+	var Sprite = new Component({
+	  frameset: null,
+	  layer: null,
+	  subsprites: []
+	});
+
+	Sprite.Subsprite = function (frameset, x, y) {
+	  return {
+	    frameset: frameset,
+	    x: x,
+	    y: y
+	  };
+	};
+
+	module.exports = Sprite;
+
+
+/***/ },
+/* 143 */
+/***/ function(module, exports, __webpack_require__) {
+
 	var _ = __webpack_require__(2);
-	var Entity = __webpack_require__(143);
+	var Entity = __webpack_require__(144);
 
 	// Component Factory
 	// -----------------
@@ -46466,7 +46558,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 143 */
+/* 144 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(2);
@@ -46493,136 +46585,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 144 */
-/***/ function(module, exports, __webpack_require__) {
-
-	
-	var Sprite = __webpack_require__(145);
-	var Position = __webpack_require__(146);
-	var PIXI = __webpack_require__(4);
-	var _ = __webpack_require__(2);
-
-	var scaleVal;
-	var scale;
-	var tileSize;
-	var layers;
-	var frames;
-	var pixisprites;
-
-	function setup(stage, spritesheet) {
-	  scaleVal = 4;
-	  scale = {x: scaleVal, y: scaleVal};
-	  tileSize = spritesheet.meta.tile * scaleVal;
-	  layers = [ // 4 layers
-	    new PIXI.Container(), // 0: background
-	    new PIXI.Container(), // 1: foreground
-	    new PIXI.Container(), // 2: foreground (player)
-	    new PIXI.Container()  // 3: interface
-	  ];
-	  frames = parseFrames(spritesheet.frames);
-	  pixisprites = [];
-	  _.each(layers, function (layer) { stage.addChild(layer); });
-	}
-
-	function update() {
-	  Sprite.each(function (sprite, i) {
-	    var entity = sprite.entity;
-	    var position = Position.get(entity.id);
-
-	    // TODO: deal with subsprites
-	    var pixisprite = getPixi(i);
-	    var frameset = getFrame(sprite.frameset);
-	    var texture = PIXI.Texture.fromFrame(frameset);
-	    var x = position.x;
-	    var y = position.y;
-	    var baselineY = pixisprite.frame ? y + 1 - pixisprite.frame.height / Sprite.tile : y;
-	    var modifiedX = toPosition(x);
-	    var modifiedY = pixisprite ? toPosition(baselineY) : toPosition(y);
-	    var layer = getLayer(sprite.layer);
-
-	    if (entity.destroyed) {
-	      pixisprite.parent.removeChild(pixisprite);
-	      return;
-	    }
-
-	    if (pixisprite.parent) {
-	      pixisprite.parent.removeChild(pixisprite);
-	    }
-	    layer.addChild(pixisprite);
-	    pixisprite.position.set(modifiedX, modifiedY);
-	    pixisprite.texture = texture;
-	  });
-	}
-
-	function parseFrames(frames) {
-	  return _.chain(frames).map(function (frame, i) {
-	    frame.index = i;
-	    return frame;
-	  }).groupBy('name')
-	  .mapValues(function (set) {
-	    return _.map(set, function (frame) {
-	      return frame.index;
-	    });
-	  }).value();
-	}
-
-	function getPixi(i) {
-	  if (!pixisprites[i]) {
-	    pixisprites[i] = new PIXI.Sprite(PIXI.Texture.fromFrame(0));
-	    pixisprites[i].scale = scale;
-	  }
-	  return pixisprites[i];
-	}
-
-	function toPosition(x) {
-	  return x * tileSize;
-	}
-
-	function getFrame(frame) {
-	  if (_.isNumber(frame)) return frame;
-	  return _.sample(frames[frame]);
-	}
-
-	function getLayer(layer) {
-	  return layers[layer];
-	}
-
-	module.exports = {
-	  setup: setup,
-	  update: update
-	};
-
-
-/***/ },
 /* 145 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var Component = __webpack_require__(142);
-
-	var Sprite = new Component({
-	  frameset: null,
-	  layer: null,
-	  subsprites: []
-	});
-
-	Sprite.Subsprite = function (frameset, x, y) {
-	  return {
-	    frameset: frameset,
-	    x: x,
-	    y: y
-	  };
-	};
-
-	module.exports = Sprite;
-
-
-/***/ },
-/* 146 */
-/***/ function(module, exports, __webpack_require__) {
-
-	
-	var Component = __webpack_require__(142);
+	var Component = __webpack_require__(143);
 
 	var Position = new Component({
 	  x: -1, // grid positions
@@ -46639,15 +46606,15 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 147 */
+/* 146 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var Entity = __webpack_require__(143);
-	var Terrain = __webpack_require__(148);
-	var Position = __webpack_require__(146);
-	var Sprite = __webpack_require__(145);
-	var pairing = __webpack_require__(149);
-	var random = __webpack_require__(150);
+	var Entity = __webpack_require__(144);
+	var Terrain = __webpack_require__(147);
+	var Position = __webpack_require__(145);
+	var Sprite = __webpack_require__(142);
+	var pairing = __webpack_require__(148);
+	var random = __webpack_require__(149);
 	var tiles = {};
 
 	function update() {
@@ -46704,11 +46671,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 148 */
+/* 147 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//var _ = require('lodash');
-	var Component = __webpack_require__(142);
+	var Component = __webpack_require__(143);
 
 	var Terrain = new Component({
 	  water: 0,
@@ -46720,7 +46687,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 149 */
+/* 148 */
 /***/ function(module, exports) {
 
 	// from http://sachiniscool.blogspot.com/2011/06/cantor-pairing-function-and-reversal.html
@@ -46728,11 +46695,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 150 */
+/* 149 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var MersenneTwister = __webpack_require__(151);
+	var MersenneTwister = __webpack_require__(150);
 	var mt = new MersenneTwister();
 
 	function seed(value) {
@@ -46755,7 +46722,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 151 */
+/* 150 */
 /***/ function(module, exports) {
 
 	/*
@@ -46966,17 +46933,17 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 152 */
+/* 151 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var Growth = __webpack_require__(153);
-	var Position = __webpack_require__(146);
-	var Terrain = __webpack_require__(148);
-	var Sprite = __webpack_require__(145);
-	var TerrainSystem = __webpack_require__(147);
+	var Growth = __webpack_require__(152);
+	var Position = __webpack_require__(145);
+	var Terrain = __webpack_require__(147);
+	var Sprite = __webpack_require__(142);
+	var TerrainSystem = __webpack_require__(146);
 
-	var GrowthStages = __webpack_require__(154);
+	var GrowthStages = __webpack_require__(153);
 
 	function update(gametime) {
 	  var DAY = 60*24;
@@ -47029,11 +46996,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 153 */
+/* 152 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var Component = __webpack_require__(142);
+	var Component = __webpack_require__(143);
 
 	var Growth = new Component({
 	  stage:   1,
@@ -47074,7 +47041,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 154 */
+/* 153 */
 /***/ function(module, exports) {
 
 	
@@ -47138,12 +47105,13 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 155 */
+/* 154 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var Position = __webpack_require__(146);
-	var Movable = __webpack_require__(141);
+	var Position = __webpack_require__(145);
+	var Movable = __webpack_require__(155);
+	var Control = __webpack_require__(140);
 
 	var lastTick;
 
@@ -47154,6 +47122,26 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 
 	  var dTime = (thisTick - lastTick) / 1000;
+	  var character = Control.entity();
+	  var active = Control.active;
+
+	  if (character && !character.destroyed) {
+	    var movable = Movable.get(character.id);
+
+	    movable.direction = [0, 0]; // reset
+	    if (active.moveLeft) {
+	      movable.direction[0] -= 1;
+	    }
+	    if (active.moveRight) {
+	      movable.direction[0] += 1;
+	    }
+	    if (active.moveUp) {
+	      movable.direction[1] -= 1;
+	    }
+	    if (active.moveDown) {
+	      movable.direction[1] += 1;
+	    }
+	  }
 
 	  Movable.each(function (movable) {
 	    var entity = movable.entity;
@@ -47178,11 +47166,26 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
+/* 155 */
+/***/ function(module, exports, __webpack_require__) {
+
+	
+	var Component = __webpack_require__(143);
+
+	var Movable = new Component({
+	  direction: [0, 0],
+	  speed: 0 // base speed in tiles per second
+	});
+
+	module.exports = Movable;
+
+
+/***/ },
 /* 156 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var Component = __webpack_require__(142);
+	var Component = __webpack_require__(143);
 
 	var Genome = new Component({
 	  chromosomes: [[]]

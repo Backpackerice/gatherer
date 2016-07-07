@@ -32,33 +32,15 @@ function deactivate(actions) {
   });
 }
 
-function control(entity) {
-  character = entity;
-}
-
-function update() {
-  if (!character || character.destroyed) return;
-  var Movable = require('../components/movable.js');
-  var movable = Movable.get(character.id);
-
-  movable.direction = [0, 0]; // reset
-  if (active.moveLeft) {
-    movable.direction[0] -= 1;
+function entity(entity) {
+  if (entity) {
+    character = entity;
   }
-  if (active.moveRight) {
-    movable.direction[0] += 1;
-  }
-  if (active.moveUp) {
-    movable.direction[1] -= 1;
-  }
-  if (active.moveDown) {
-    movable.direction[1] += 1;
-  }
+  return character;
 }
 
 module.exports = {
   active: active,
   setup: setup,
-  control: control,
-  update: update
+  entity: entity
 };

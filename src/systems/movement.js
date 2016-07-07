@@ -1,6 +1,7 @@
 
 var Position = require('../components/position.js');
 var Movable = require('../components/movable.js');
+var Control = require('./controls.js');
 
 var lastTick;
 
@@ -11,6 +12,26 @@ function update(gametime) {
   }
 
   var dTime = (thisTick - lastTick) / 1000;
+  var character = Control.entity();
+  var active = Control.active;
+
+  if (character && !character.destroyed) {
+    var movable = Movable.get(character.id);
+
+    movable.direction = [0, 0]; // reset
+    if (active.moveLeft) {
+      movable.direction[0] -= 1;
+    }
+    if (active.moveRight) {
+      movable.direction[0] += 1;
+    }
+    if (active.moveUp) {
+      movable.direction[1] -= 1;
+    }
+    if (active.moveDown) {
+      movable.direction[1] += 1;
+    }
+  }
 
   Movable.each(function (movable) {
     var entity = movable.entity;
