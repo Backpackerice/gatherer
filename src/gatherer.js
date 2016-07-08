@@ -1,6 +1,9 @@
 var Gatherer = {};
 var Game = require('./base/game.js');
 
+// Entities
+var Character = require('./systems/character.js');
+
 // Systems
 var ControlSystem = require('./systems/controls.js');
 var SpriteSystem = require('./systems/sprite.js');
@@ -21,6 +24,9 @@ Gatherer.start = function () {
       SpriteSystem.setup(game.stage, resources['assets/sprites.json'].data);
       ControlSystem.setup(document.body);
       TerrainSystem.generate(12, 12);
+
+      var character = new Character(0, 0);
+      ControlSystem.entity(character);
     }
   });
 
