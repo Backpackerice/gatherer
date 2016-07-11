@@ -1,12 +1,12 @@
 var path = require('path');
 
 module.exports = {
-  entry: "./src/gatherer.js",
+  entry: './src/gatherer.js',
   output: {
-    path: ".",
-    filename: "gatherer.js",
-    library: "Gatherer",
-    libraryTarget: "umd"
+    path: '.',
+    filename: 'gatherer.js',
+    library: 'Gatherer',
+    libraryTarget: 'umd'
   },
   module: {
     loaders: [
