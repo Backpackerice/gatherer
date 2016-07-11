@@ -46283,7 +46283,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var character = new Entity();
 	  character.set(Movable, {speed: 1});
 	  character.set(Position, {x: x, y: y});
-	  character.set(Sprite, {layer: 2});
+	  character.set(Sprite, {frameset: 'char-0', layer: 2});
 
 	  return character;
 	}
