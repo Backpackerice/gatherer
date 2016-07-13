@@ -46281,7 +46281,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	function Character(x, y) {
 	  var character = new Entity();
-	  character.set(Movable, {speed: 1});
+	  character.set(Movable, {speed: 2});
 	  character.set(Position, {x: x, y: y});
 	  character.set(Sprite, {frameset: 'char-0', layer: 2});
 
@@ -47172,16 +47172,16 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    movable.direction = [0, 0]; // reset
 	    if (active.moveLeft) {
-	      movable.direction[0] -= 1;
+	      movable.direction[0] = -1;
 	    }
 	    if (active.moveRight) {
-	      movable.direction[0] += 1;
+	      movable.direction[0] = 1;
 	    }
 	    if (active.moveUp) {
-	      movable.direction[1] -= 1;
+	      movable.direction[1] = -1;
 	    }
 	    if (active.moveDown) {
-	      movable.direction[1] += 1;
+	      movable.direction[1] = 1;
 	    }
 	  }
 
@@ -47200,6 +47200,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	      position.y = position.y + dY;
 	    }
 	  });
+
+	  lastTick = thisTick;
 	}
 
 	module.exports = {

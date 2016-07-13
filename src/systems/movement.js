@@ -20,16 +20,16 @@ function update(gametime) {
 
     movable.direction = [0, 0]; // reset
     if (active.moveLeft) {
-      movable.direction[0] -= 1;
+      movable.direction[0] = -1;
     }
     if (active.moveRight) {
-      movable.direction[0] += 1;
+      movable.direction[0] = 1;
     }
     if (active.moveUp) {
-      movable.direction[1] -= 1;
+      movable.direction[1] = -1;
     }
     if (active.moveDown) {
-      movable.direction[1] += 1;
+      movable.direction[1] = 1;
     }
   }
 
@@ -48,6 +48,8 @@ function update(gametime) {
       position.y = position.y + dY;
     }
   });
+
+  lastTick = thisTick;
 }
 
 module.exports = {
