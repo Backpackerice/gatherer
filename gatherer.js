@@ -46463,7 +46463,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var Component = __webpack_require__(143);
 
 	var Movable = new Component({
-	  direction: [0, 0],
+	  to_position: [-1, -1],
 	  speed: 0 // base speed in tiles per second
 	});
 
@@ -47164,44 +47164,53 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 
 	  var dTime = (thisTick - lastTick) / 1000;
-	  var character = Control.entity();
-	  var active = Control.active;
 
-	  if (character && !character.destroyed) {
-	    var movable = Movable.get(character.id);
+	  control();
 
-	    movable.direction = [0, 0]; // reset
-	    if (active.moveLeft) {
-	      movable.direction[0] = -1;
-	    }
-	    if (active.moveRight) {
-	      movable.direction[0] = 1;
-	    }
-	    if (active.moveUp) {
-	      movable.direction[1] = -1;
-	    }
-	    if (active.moveDown) {
-	      movable.direction[1] = 1;
-	    }
-	  }
-
+	  // Movement updates
 	  Movable.each(function (movable) {
 	    var entity = movable.entity;
 	    var position = Position.get(entity.id);
 	    var dMove = dTime * movable.speed;
-	    var sum = Math.abs(movable.direction[0]) + Math.abs(movable.direction[1]);
 
 	    if (!position || entity.destroyed) return;
 
-	    if (sum) {
-	      var dX = movable.direction[0] * dMove / Math.sqrt(sum);
-	      var dY = movable.direction[1] * dMove / Math.sqrt(sum);
-	      position.x = position.x + dX;
-	      position.y = position.y + dY;
-	    }
+	    var deltaX = movable.to_position[0] - position.x;
+	    var deltaY = movable.to_position[1] - position.y;
+
+	    var dX = Math.sign(deltaX) * Math.min(dMove, Math.abs(deltaX));
+	    var dY = Math.sign(deltaY) * Math.min(dMove, Math.abs(deltaY));
+
+	    position.x = position.x + dX;
+	    position.y = position.y + dY;
 	  });
 
 	  lastTick = thisTick;
+	}
+
+	function control() {
+	  // Update player based on controls
+	  var character = Control.entity();
+	  var active = Control.active;
+
+	  // Character control
+	  if (character && !character.destroyed) {
+	    var movable = Movable.get(character.id);
+	    var position = Position.get(character.id);
+
+	    if (active.moveLeft) {
+	      movable.to_position[0] = position.x - 1;
+	    }
+	    if (active.moveRight) {
+	      movable.to_position[0] = position.x + 1;
+	    }
+	    if (active.moveUp) {
+	      movable.to_position[1] = position.y - 1;
+	    }
+	    if (active.moveDown) {
+	      movable.to_position[1] = position.y + 1;
+	    }
+	  }
 	}
 
 	module.exports = {

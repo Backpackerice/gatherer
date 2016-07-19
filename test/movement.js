@@ -13,14 +13,14 @@ describe('movement system', function () {
   it('updates the position of movable entities', function () {
     var entity = new Entity();
     var position = entity.set(Position, {x: 5, y: 5});
-    entity.set(Movable, {speed: 1, direction: [0, 1]});
+    entity.set(Movable, {speed: 1, to_position: [4, 4]});
 
     MovementSystem.update(GameTime.now());
     tick();
     MovementSystem.update(GameTime.now());
 
-    expect(position.x).to.equal(5);
-    expect(position.y).to.equal(6);
+    expect(position.x).to.equal(4);
+    expect(position.y).to.equal(4);
   });
 
   function tick() {
