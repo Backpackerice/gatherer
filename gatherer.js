@@ -47197,18 +47197,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	  if (character && !character.destroyed) {
 	    var movable = Movable.get(character.id);
 	    var position = Position.get(character.id);
+	    var roundX = Math.round(position.x);
+	    var roundY = Math.round(position.y);
 
 	    if (active.moveLeft) {
-	      movable.to_position[0] = position.x - 1;
+	      movable.to_position[0] = roundX - 1;
 	    }
 	    if (active.moveRight) {
-	      movable.to_position[0] = position.x + 1;
+	      movable.to_position[0] = roundX + 1;
 	    }
 	    if (active.moveUp) {
-	      movable.to_position[1] = position.y - 1;
+	      movable.to_position[1] = roundY - 1;
 	    }
 	    if (active.moveDown) {
-	      movable.to_position[1] = position.y + 1;
+	      movable.to_position[1] = roundY + 1;
 	    }
 	  }
 	}
