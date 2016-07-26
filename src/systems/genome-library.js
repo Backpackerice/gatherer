@@ -20,16 +20,11 @@ var library = {
   'dicot': 2,
   'monocot': 2,
 
-  'fibrous': 2,
-  'rind': 1,
-  'bolls': 1,
-
   'poison_leaf': 2,
   'poison_seed': 1,
   'poison_root': 1,
-  'blooming': 1,
 
-  'nectar': 1,
+  'bolls': 1,
   'wood': 1,
   'bulb': 1
 };

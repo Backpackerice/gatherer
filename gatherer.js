@@ -46502,7 +46502,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  '37': ['moveLeft'],
 	  '38': ['moveUp'],
 	  '39': ['moveRight'],
-	  '40': ['moveDown']
+	  '40': ['moveDown'],
+	  '49': ['plant'] // 1
 	};
 
 	var active = {};
