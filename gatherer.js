@@ -66,6 +66,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var TerrainSystem = __webpack_require__(148);
 	var GrowthSystem = __webpack_require__(153);
 	var MovementSystem = __webpack_require__(156);
+	var ActionSystem = __webpack_require__(157);
 
 	var game;
 	var registerComponent = function (name, component) {
@@ -90,6 +91,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  game.registerUpdate(TerrainSystem.update);
 	  game.registerUpdate(GrowthSystem.update);
 	  game.registerUpdate(MovementSystem.update);
+	  game.registerUpdate(ActionSystem.update);
 
 	  // updates in render loop
 	  game.registerRender(SpriteSystem.update);
@@ -100,7 +102,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  registerComponent('Movable',  __webpack_require__(144));
 	  registerComponent('Position',  __webpack_require__(142));
 	  registerComponent('Growth',  __webpack_require__(154));
-	  registerComponent('Genome',  __webpack_require__(157));
+	  registerComponent('Genome',  __webpack_require__(160));
 
 	  var view = game.start();
 	  document.body.appendChild(view);
@@ -47225,6 +47227,123 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 157 */
 /***/ function(module, exports, __webpack_require__) {
 
+	var Control = __webpack_require__(146);
+	var ActionPlant = __webpack_require__(158);
+
+	var actionMap = {
+	  'plant': ActionPlant.perform
+	};
+
+	function update() {
+	  var active = Control.active;
+	  var character = Control.entity();
+
+	  // Character control
+	  if (character && !character.destroyed) {
+	    actionMap.forEach(function (perform, key) {
+	      if (active[key]) perform(character);
+	    });
+	  }
+	}
+
+	module.exports = {
+	  update: update
+	};
+
+
+/***/ },
+/* 158 */
+/***/ function(module, exports, __webpack_require__) {
+
+	
+	var Plant = __webpack_require__(159);
+	var Active = __webpack_require__(165);
+	var Position = __webpack_require__(142);
+	var GenomeSystem = __webpack_require__(161);
+	var genomeLib = __webpack_require__(162);
+
+	var randomGenome = GenomeSystem.generator(genomeLib, 1);
+
+	function perform(character) {
+	  var active = Active.get(character.id);
+	  var position = Position.get(character.id);
+	  var chromosomes = randomGenome.next();
+	  var plant = new Plant(chromosomes, position.x, position.y);
+
+	  active.action = 'plant';
+	  return plant;
+	}
+
+	module.exports = {
+	  perform: perform
+	};
+
+
+/***/ },
+/* 159 */
+/***/ function(module, exports, __webpack_require__) {
+
+	
+	var _ = __webpack_require__(2);
+	var Entity = __webpack_require__(141);
+	var Growth = __webpack_require__(154);
+	var Position = __webpack_require__(142);
+	var Sprite = __webpack_require__(145);
+	var Genome = __webpack_require__(160);
+	var GenomeSystem = __webpack_require__(161);
+	var TerrainSystem = __webpack_require__(148);
+
+	function Plant(chromosomes, x, y) {
+	  var terrain = TerrainSystem.get(x, y);
+	  if (!terrain) return;
+
+	  var plant = new Entity();
+	  var genome = plant.set(Genome, {chromosomes: chromosomes});
+	  var growth = plant.set(Growth);
+	  plant.set(Position, {x: x, y: y});
+	  plant.set(Sprite, {layer: 1});
+
+	  var expression = GenomeSystem.express(genome);
+
+	  Plant.define('growth', growth, expression);
+
+	  return plant;
+	}
+
+	Plant.define = function (key, component, expression) {
+	  var definitions = __webpack_require__(163);
+	  var definition = definitions[key];
+	  var value;
+	  for (var attr in definition) {
+	    value = component[attr];
+	    component[attr] = definition[attr](value, expression);
+	  }
+	};
+
+	Plant.type = function (expression) {
+	  var types = __webpack_require__(164);
+	  var traits = expression.traits;
+	  var counts = expression.counts;
+	  var output;
+
+	  _.every(types, function (type) {
+	    var isType = type.check(traits, counts);
+	    if (isType) {
+	      output = type.name;
+	    }
+	    return !isType;
+	  });
+
+	  return output;
+	};
+
+	module.exports = Plant;
+
+
+/***/ },
+/* 160 */
+/***/ function(module, exports, __webpack_require__) {
+
 	
 	var Component = __webpack_require__(143);
 
@@ -47239,6 +47358,233 @@ return /******/ (function(modules) { // webpackBootstrap
 	});
 
 	module.exports = Genome;
+
+
+/***/ },
+/* 161 */
+/***/ function(module, exports, __webpack_require__) {
+
+	
+	var _ = __webpack_require__(2);
+	var random = __webpack_require__(151);
+	var genomeLibrary = __webpack_require__(162);
+
+	function meiosis(genome) {
+	  var zygote = [];
+	  if (genome.ploidy % 2 === 0) {
+	    genome.chromosomes.forEach(function (chromosome) {
+	      var c = _.clone(chromosome);
+	      for (var i = 0; i < chromosome.length / 2; i++) {
+	        var chromatid = c.splice(random.int(0, c.length), 1);
+	        zygote.push(chromatid[0]);
+	      }
+	    });
+	  }
+	  return zygote;
+	}
+
+	function recombine(genome1, genome2) {
+	  var chromosomes = [];
+	  if (genome1.chromosomes.length === genome2.chromosomes.length) {
+	    chromosomes = _.zip(meiosis(genome1), meiosis(genome2));
+	    _.remove(chromosomes, function (chromosome) { return chromosome.length === 0; });
+	  }
+	  return chromosomes;
+	}
+
+	function express(genome) {
+	  var counts = [];
+	  var traits = {};
+	  _.each(genome.chromosomes, function (chromosome) {
+	    var ts = [], c = {};
+	    _.each(chromosome, function (chromatid) { ts = ts.concat(chromatid.split('.'));});
+	    _.each(ts, function (t) { c[t] = c[t] ? c[t] + 1 : 1; });
+	    counts.push(c);
+	  });
+
+	  var mergeCounts = _.cloneDeep(counts);
+	  mergeCounts.push(function (a, b) { return (a > b) ? a : b; });
+	  traits = _.mergeWith.apply(null, mergeCounts);
+	  return {
+	    traits: traits,
+	    counts: counts
+	  };
+	}
+
+	function* generator(library, level, ploidy, count) {
+	  // Generates random chromosomes given a library of genes with the
+	  // keys as the gene and the value as an adjustable chance weight.
+	  library = library || genomeLibrary;
+	  count = count || 99;
+	  level = level || random.int(1, 4);
+	  ploidy = ploidy || 2;
+	  var index = 0;
+	  var chance = 0;
+	  var total = _.reduce(library, function (sum, num) { return sum + num; });
+	  var chances = _.map(library, function (count, gene) {
+	    chance += count / total;
+	    return {gene: gene, chance: chance};
+	  });
+	  var chromosomes;
+	  var randomGene = function () {
+	    var chance = random.random(), gene = _.last(chances).gene;
+	    for (var c = 0; c < chances.length; c++) {
+	      if (chance < chances[c].chance) {
+	        gene = chances[c].gene;
+	        break;
+	      }
+	    }
+	    return gene;
+	  };
+
+	  while(index < count) {
+	    chromosomes = [];
+	    for (var cs = 0; cs < level * 4; cs++) {
+	      var chromosome = [];
+	      for (var ct = 0; ct < ploidy; ct++) {
+	        var chromatid = [];
+	        for (var t = 0; t < random.int(0, 4 + level); t++) {
+	          chromatid.push(randomGene());
+	        }
+	        chromosome.push(chromatid.join('.'));
+	      }
+	      chromosomes.push(chromosome);
+	    }
+	    index++;
+	    yield chromosomes;
+	  }
+	}
+
+	function* nursery(mother, father, count) {
+	  count = count || 99;
+	  var index = 0;
+	  while(index < count) {
+	    index++;
+	    yield recombine(mother, father);
+	  }
+	}
+
+	module.exports = {
+	  meiosis: meiosis,
+	  recombine: recombine,
+	  express: express,
+	  generator: generator,
+	  nursery: nursery
+	};
+
+
+/***/ },
+/* 162 */
+/***/ function(module, exports) {
+
+	var library = {
+	  'red': 5,
+	  'yellow': 5,
+	  'blue': 5,
+
+	  'root': 3,
+	  'stem': 3,
+	  'leaf': 3,
+	  'flower': 3,
+	  'seed': 3,
+
+	  'edible_stem': 3,
+	  'edible_seed': 3,
+	  'edible_root': 3,
+	  'edible_leaf': 4,
+	  'fruit': 1,
+	  'staple': 1,
+	  'tuber': 1,
+
+	  'dicot': 2,
+	  'monocot': 2,
+
+	  'poison_leaf': 2,
+	  'poison_seed': 1,
+	  'poison_root': 1,
+
+	  'bolls': 1,
+	  'wood': 1,
+	  'bulb': 1
+	};
+
+	module.exports = library;
+
+
+/***/ },
+/* 163 */
+/***/ function(module, exports) {
+
+	module.exports = {
+	  growth: {
+	    cost_root: getCost('root'),
+	    cost_stem: getCost('stem'),
+	    cost_leaf: getCost('leaf'),
+	    cost_flower: getCost('flower'),
+	    cost_seed: getCost('seed')
+	  }
+	};
+
+	function getCost(attr) {
+	  return function (base, expression) {
+	    var traits = expression.traits;
+	    var attrTrait = Math.min(traits[attr] || 0, 5);
+	    return base - base*(attrTrait / 10);
+	  };
+	}
+
+
+/***/ },
+/* 164 */
+/***/ function(module, exports) {
+
+	var types = [
+	  {
+	    name: 'grain',
+	    check: function (traits) {
+	      return traits.monocot && !traits.dicot && traits.grain; }
+	  },
+	  {
+	    name: 'grass',
+	    check: function (traits) { return traits.monocot && !traits.dicot; }
+	  },
+
+	  {
+	    name: 'tree',
+	    check: function (traits) { return traits.root > 2 && traits.stem > 3 && traits.wood; }
+	  },
+
+	  {
+	    name: 'shrub',
+	    check: function (traits) { return traits.leaf > 2 && traits.wood; }
+	  },
+
+	  {
+	    name: 'stalk',
+	    check: function (traits) { return traits.stem > 3; }
+	  },
+
+	  {
+	    name: 'herb',
+	    check: function () { return true; }
+	  }
+	];
+
+	module.exports = types;
+
+
+/***/ },
+/* 165 */
+/***/ function(module, exports, __webpack_require__) {
+
+	
+	var Component = __webpack_require__(143);
+
+	var Active = new Component({
+	  action: null
+	});
+
+	module.exports = Active;
 
 
 /***/ }
