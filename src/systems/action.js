@@ -1,5 +1,6 @@
 var Control = require('./controls.js');
 var ActionPlant = require('./action-plant');
+var _ = require('lodash');
 
 var actionMap = {
   'plant': ActionPlant.perform
@@ -11,7 +12,7 @@ function update() {
 
   // Character control
   if (character && !character.destroyed) {
-    actionMap.forEach(function (perform, key) {
+    _.each(actionMap, function (perform, key) {
       if (active[key]) perform(character);
     });
   }

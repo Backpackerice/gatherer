@@ -46588,15 +46588,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    // TODO: deal with subsprites
 	    var pixisprite = getPixi(i);
-	    var frameset = getFrame(sprite.frameset);
-	    var texture = PIXI.Texture.fromFrame(frameset);
-	    var x = position.x;
-	    var y = position.y;
-	    var baselineY = pixisprite.frame ? y + 1 - pixisprite.frame.height / Sprite.tile : y;
-	    var modifiedX = toPosition(x);
-	    var modifiedY = pixisprite ? toPosition(baselineY) : toPosition(y);
-	    var layer = getLayer(sprite.layer);
-
 	    if (entity.destroyed) {
 	      pixisprite.parent.removeChild(pixisprite);
 	      return;
@@ -46605,6 +46596,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if (pixisprite.parent) {
 	      pixisprite.parent.removeChild(pixisprite);
 	    }
+
+	    if (!sprite.frameset) return;
+
+	    var frameset = getFrame(sprite.frameset);
+	    var texture = PIXI.Texture.fromFrame(frameset);
+	    var x = position.x;
+	    var y = position.y;
+	    var baselineY = pixisprite.frame ? y + 1 - pixisprite.frame.height / Sprite.tile : y;
+	    var modifiedX = toPosition(x);
+	    var modifiedY = pixisprite ? toPosition(baselineY) : toPosition(y);
+	    var layer = getLayer(sprite.layer);
 	    layer.addChild(pixisprite);
 	    pixisprite.position.set(modifiedX, modifiedY);
 	    pixisprite.texture = texture;
@@ -47229,6 +47231,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var Control = __webpack_require__(146);
 	var ActionPlant = __webpack_require__(158);
+	var _ = __webpack_require__(2);
 
 	var actionMap = {
 	  'plant': ActionPlant.perform
@@ -47240,7 +47243,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  // Character control
 	  if (character && !character.destroyed) {
-	    actionMap.forEach(function (perform, key) {
+	    _.each(actionMap, function (perform, key) {
 	      if (active[key]) perform(character);
 	    });
 	  }
@@ -47257,7 +47260,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	
 	var Plant = __webpack_require__(159);
-	var Active = __webpack_require__(165);
 	var Position = __webpack_require__(142);
 	var GenomeSystem = __webpack_require__(161);
 	var genomeLib = __webpack_require__(162);
@@ -47265,12 +47267,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	var randomGenome = GenomeSystem.generator(genomeLib, 1);
 
 	function perform(character) {
-	  var active = Active.get(character.id);
 	  var position = Position.get(character.id);
-	  var chromosomes = randomGenome.next();
+	  var chromosomes = randomGenome.next().value;
 	  var plant = new Plant(chromosomes, position.x, position.y);
-
-	  active.action = 'plant';
 	  return plant;
 	}
 
@@ -47571,20 +47570,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	];
 
 	module.exports = types;
-
-
-/***/ },
-/* 165 */
-/***/ function(module, exports, __webpack_require__) {
-
-	
-	var Component = __webpack_require__(143);
-
-	var Active = new Component({
-	  action: null
-	});
-
-	module.exports = Active;
 
 
 /***/ }

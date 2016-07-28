@@ -33,15 +33,6 @@ function update() {
 
     // TODO: deal with subsprites
     var pixisprite = getPixi(i);
-    var frameset = getFrame(sprite.frameset);
-    var texture = PIXI.Texture.fromFrame(frameset);
-    var x = position.x;
-    var y = position.y;
-    var baselineY = pixisprite.frame ? y + 1 - pixisprite.frame.height / Sprite.tile : y;
-    var modifiedX = toPosition(x);
-    var modifiedY = pixisprite ? toPosition(baselineY) : toPosition(y);
-    var layer = getLayer(sprite.layer);
-
     if (entity.destroyed) {
       pixisprite.parent.removeChild(pixisprite);
       return;
@@ -50,6 +41,17 @@ function update() {
     if (pixisprite.parent) {
       pixisprite.parent.removeChild(pixisprite);
     }
+
+    if (!sprite.frameset) return;
+
+    var frameset = getFrame(sprite.frameset);
+    var texture = PIXI.Texture.fromFrame(frameset);
+    var x = position.x;
+    var y = position.y;
+    var baselineY = pixisprite.frame ? y + 1 - pixisprite.frame.height / Sprite.tile : y;
+    var modifiedX = toPosition(x);
+    var modifiedY = pixisprite ? toPosition(baselineY) : toPosition(y);
+    var layer = getLayer(sprite.layer);
     layer.addChild(pixisprite);
     pixisprite.position.set(modifiedX, modifiedY);
     pixisprite.texture = texture;
