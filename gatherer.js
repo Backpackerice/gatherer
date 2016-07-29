@@ -46561,6 +46561,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var scaleVal;
 	var scale;
+	var tileBase;
 	var tileSize;
 	var layers;
 	var frames;
@@ -46569,7 +46570,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	function setup(stage, spritesheet) {
 	  scaleVal = 4;
 	  scale = {x: scaleVal, y: scaleVal};
-	  tileSize = spritesheet.meta.tile * scaleVal;
+	  tileBase = spritesheet.meta.tile;
+	  tileSize = tileBase * scaleVal;
 	  layers = [ // 4 layers
 	    new PIXI.Container(), // 0: background
 	    new PIXI.Container(), // 1: foreground
@@ -46603,7 +46605,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var texture = PIXI.Texture.fromFrame(frameset);
 	    var x = position.x;
 	    var y = position.y;
-	    var baselineY = pixisprite.frame ? y + 1 - pixisprite.frame.height / Sprite.tile : y;
+	    var baselineY = pixisprite.texture ? y + 1 - pixisprite.texture.height / tileBase : y;
 	    var modifiedX = toPosition(x);
 	    var modifiedY = pixisprite ? toPosition(baselineY) : toPosition(y);
 	    var layer = getLayer(sprite.layer);
