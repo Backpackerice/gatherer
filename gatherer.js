@@ -46465,7 +46465,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var Component = __webpack_require__(143);
 
 	var Movable = new Component({
-	  to_position: [-1, -1],
+	  to_position: [null, null],
 	  speed: 0 // base speed in tiles per second
 	});
 
@@ -47179,6 +47179,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var entity = movable.entity;
 	    var position = Position.get(entity.id);
 	    var dMove = dTime * movable.speed;
+	    initialize(movable, position);
 
 	    if (!position || entity.destroyed) return;
 
@@ -47193,6 +47194,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	  });
 
 	  lastTick = thisTick;
+	}
+
+	// Initializes the movable position to the current position if null.
+	function initialize(movable, position) {
+	  var toPosition = movable.to_position;
+	  movable.to_position[0] = toPosition[0] === null ? position.x : toPosition[0];
+	  movable.to_position[1] = toPosition[1] === null ? position.x : toPosition[1];
+	  return movable;
 	}
 
 	function control() {

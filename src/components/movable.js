@@ -2,7 +2,7 @@
 var Component = require('../base/component.js');
 
 var Movable = new Component({
-  to_position: [-1, -1],
+  to_position: [null, null],
   speed: 0 // base speed in tiles per second
 });
 
