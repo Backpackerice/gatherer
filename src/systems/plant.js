@@ -6,12 +6,8 @@ var Position = require('../components/position.js');
 var Sprite = require('../components/sprite.js');
 var Genome = require('../components/genome.js');
 var GenomeSystem = require('./genome.js');
-var TerrainSystem = require('./terrain.js');
 
 function Plant(chromosomes, x, y) {
-  var terrain = TerrainSystem.get(x, y);
-  if (!terrain) return;
-
   var plant = new Entity();
   var genome = plant.set(Genome, {chromosomes: chromosomes});
   var growth = plant.set(Growth);

@@ -46687,7 +46687,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 	function get(x, y) {
-	  return tiles[pairing(x, y)];
+	  return Terrain.get(tiles[pairing(x, y)].id);
+	}
+
+	function plantable(x, y) {
+	  var terrain = get(x, y);
+	  return terrain && terrain.plantable && !terrain.planted;
+	}
+
+	function plant(entity, x, y) {
+	  var terrain = get(x, y);
+	  terrain.planted = entity.id;
+	  return terrain;
 	}
 
 	function generate(cols, rows) {
@@ -46696,9 +46707,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	      var type = soil; // always soil for now
 	      var water = random.int(type.water[0], type.water[1]);
 	      var nutrients = random.int(type.nutrients[0], type.nutrients[1]);
+	      var plantable = type.plantable;
 
 	      var entity = new Entity();
-	      entity.set(Terrain, {water: water, nutrients: nutrients});
+	      entity.set(Terrain, {water: water, nutrients: nutrients, plantable: plantable});
 	      entity.set(Position, {x: x, y: y});
 	      entity.set(Sprite, {layer: 0, frameset: type.frameSet});
 	    }
@@ -46708,6 +46720,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = {
 	  update: update,
 	  get: get,
+	  plantable: plantable,
+	  plant: plant,
 	  generate: generate
 	};
 
@@ -46715,7 +46729,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	var soil = {
 	  frameSet: 'tile-soil',
 	  water: [20, 80],
-	  nutrients: [60, 100]
+	  nutrients: [60, 100],
+	  plantable: true
 	};
 
 
@@ -46729,7 +46744,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	var Terrain = new Component({
 	  water: 0,
 	  nutrients: 0,
-	  light: 0
+	  light: 0,
+	  plantable: false,
+	  planted: false
 	});
 
 	module.exports = Terrain;
@@ -46988,7 +47005,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var Growth = __webpack_require__(154);
 	var Position = __webpack_require__(142);
-	var Terrain = __webpack_require__(149);
 	var Sprite = __webpack_require__(145);
 	var TerrainSystem = __webpack_require__(148);
 
@@ -47004,8 +47020,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var position = Position.get(entity.id);
 	    var sprite = Sprite.get(entity.id);
 
-	    var tile = TerrainSystem.get(position.x, position.y);
-	    var terrain = Terrain.get(tile.id);
+	    var terrain = TerrainSystem.get(position.x, position.y);
 
 	    var stage = growth.stage;
 	    var newEnergy = 0;
@@ -47270,22 +47285,36 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	
+	var _ = __webpack_require__(2);
 	var Plant = __webpack_require__(159);
 	var Position = __webpack_require__(142);
 	var GenomeSystem = __webpack_require__(161);
+	var TerrainSystem = __webpack_require__(148);
 	var genomeLib = __webpack_require__(162);
 
 	var randomGenome = GenomeSystem.generator(genomeLib, 1);
+	var timeout = 500;
+	// TODO: convert timeout system to action frames
 
 	function perform(character) {
 	  var position = Position.get(character.id);
-	  var chromosomes = randomGenome.next().value;
-	  var plant = new Plant(chromosomes, position.x, position.y);
+	  var x = Math.round(position.x);
+	  var y = Math.round(position.y);
+
+	  var plantable = TerrainSystem.plantable(x, y);
+	  var chromosomes;
+	  var plant;
+
+	  if (plantable) {
+	    chromosomes = randomGenome.next().value;
+	    plant = new Plant(chromosomes, x, y);
+	    TerrainSystem.plant(plant, x, y);
+	  }
 	  return plant;
 	}
 
 	module.exports = {
-	  perform: perform
+	  perform: _.throttle(perform, timeout, {trailing: false})
 	};
 
 
@@ -47301,12 +47330,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	var Sprite = __webpack_require__(145);
 	var Genome = __webpack_require__(160);
 	var GenomeSystem = __webpack_require__(161);
-	var TerrainSystem = __webpack_require__(148);
 
 	function Plant(chromosomes, x, y) {
-	  var terrain = TerrainSystem.get(x, y);
-	  if (!terrain) return;
-
 	  var plant = new Entity();
 	  var genome = plant.set(Genome, {chromosomes: chromosomes});
 	  var growth = plant.set(Growth);

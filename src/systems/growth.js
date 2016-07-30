@@ -1,7 +1,6 @@
 
 var Growth = require('../components/growth.js');
 var Position = require('../components/position.js');
-var Terrain = require('../components/terrain.js');
 var Sprite = require('../components/sprite.js');
 var TerrainSystem = require('../systems/terrain.js');
 
@@ -17,8 +16,7 @@ function update(gametime) {
     var position = Position.get(entity.id);
     var sprite = Sprite.get(entity.id);
 
-    var tile = TerrainSystem.get(position.x, position.y);
-    var terrain = Terrain.get(tile.id);
+    var terrain = TerrainSystem.get(position.x, position.y);
 
     var stage = growth.stage;
     var newEnergy = 0;

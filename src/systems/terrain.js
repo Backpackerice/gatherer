@@ -27,7 +27,18 @@ function update() {
 }
 
 function get(x, y) {
-  return tiles[pairing(x, y)];
+  return Terrain.get(tiles[pairing(x, y)].id);
+}
+
+function plantable(x, y) {
+  var terrain = get(x, y);
+  return terrain && terrain.plantable && !terrain.planted;
+}
+
+function plant(entity, x, y) {
+  var terrain = get(x, y);
+  terrain.planted = entity.id;
+  return terrain;
 }
 
 function generate(cols, rows) {
@@ -36,9 +47,10 @@ function generate(cols, rows) {
       var type = soil; // always soil for now
       var water = random.int(type.water[0], type.water[1]);
       var nutrients = random.int(type.nutrients[0], type.nutrients[1]);
+      var plantable = type.plantable;
 
       var entity = new Entity();
-      entity.set(Terrain, {water: water, nutrients: nutrients});
+      entity.set(Terrain, {water: water, nutrients: nutrients, plantable: plantable});
       entity.set(Position, {x: x, y: y});
       entity.set(Sprite, {layer: 0, frameset: type.frameSet});
     }
@@ -48,6 +60,8 @@ function generate(cols, rows) {
 module.exports = {
   update: update,
   get: get,
+  plantable: plantable,
+  plant: plant,
   generate: generate
 };
 
@@ -55,5 +69,6 @@ module.exports = {
 var soil = {
   frameSet: 'tile-soil',
   water: [20, 80],
-  nutrients: [60, 100]
+  nutrients: [60, 100],
+  plantable: true
 };
