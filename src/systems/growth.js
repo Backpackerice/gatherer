@@ -2,6 +2,7 @@
 var Growth = require('../components/growth.js');
 var Position = require('../components/position.js');
 var Sprite = require('../components/sprite.js');
+var Arable = require('../components/arable.js');
 var TerrainSystem = require('../systems/terrain.js');
 
 var GrowthStages = require('./growth-stages.js');
@@ -16,7 +17,8 @@ function update(gametime) {
     var position = Position.get(entity.id);
     var sprite = Sprite.get(entity.id);
 
-    var terrain = TerrainSystem.get(position.x, position.y);
+    var tile = TerrainSystem.get(position.x, position.y);
+    var arable = Arable.get(tile.id);
 
     var stage = growth.stage;
     var newEnergy = 0;
@@ -24,8 +26,8 @@ function update(gametime) {
 
     growth.last_tick = growth.last_tick || time;
     if ((time - growth.last_tick) * growth.tick_rate > DAY) {
-      newEnergy = energy(growth, terrain, time);
-      newStage = GrowthStages[stage].update(growth, terrain, time);
+      newEnergy = energy(growth, arable, time);
+      newStage = GrowthStages[stage].update(growth, arable, time);
       growth.death_ticks += 1 * !newEnergy;
       growth.last_tick = time;
       growth.stage_ticks++;
@@ -39,10 +41,10 @@ function update(gametime) {
   });
 }
 
-function energy(growth, terrain) {
-  var dWater = Math.abs(growth.affinity_water - terrain.water);
-  var dSoil  = Math.abs(growth.affinity_soil  - terrain.nutrients);
-  var dLight = Math.abs(growth.affinity_light - terrain.light);
+function energy(growth, arable) {
+  var dWater = Math.abs(growth.affinity_water - arable.water);
+  var dSoil  = Math.abs(growth.affinity_soil  - arable.nutrients);
+  var dLight = Math.abs(growth.affinity_light - arable.light);
   var water = dWater < 10 * growth.affinity_water / 5;
   var soil  = dSoil  < 10 * growth.affinity_soil  / 5;
   var light = dLight < 10 * growth.affinity_light / 5;

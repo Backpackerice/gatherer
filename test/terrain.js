@@ -7,28 +7,24 @@ var Entity = require('../src/base/entity.js');
 describe('terrain component', function () {
   it('initializes with terrain properties', function () {
     var terrain = new Terrain();
-    expect(terrain.water).to.equal(0);
-    expect(terrain.nutrients).to.equal(0);
-    expect(terrain.light).to.equal(0);
-    expect(terrain.plantable).to.equal(false);
-    expect(terrain.planted).to.equal(false);
+    expect(terrain.type).to.be.defined;
   });
 });
 
 describe('terrain system', function () {
   it('can generate terrain', function () {
     TerrainSystem.generate(1, 1);
-    expect(TerrainSystem.get(0, 0)).to.be.an.instanceof(Terrain);
+    expect(TerrainSystem.get(0, 0)).to.be.an.instanceof(Entity);
   });
 
-  it('can determine if a location is plantable', function () {
-    expect(TerrainSystem.plantable(0, 0)).to.equal(true);
+  it('can determine if a location is arable', function () {
+    expect(TerrainSystem.arable(0, 0)).to.equal(true);
   });
 
   it('can plant at a location', function () {
     var entity = new Entity();
-    var terrain = TerrainSystem.plant(entity, 0, 0);
-    expect(TerrainSystem.plantable(0, 0)).to.equal(false);
-    expect(terrain.planted).to.equal(entity.id);
+    var arable = TerrainSystem.plant(entity, 0, 0);
+    expect(TerrainSystem.arable(0, 0)).to.equal(false);
+    expect(arable.planted).to.equal(entity.id);
   });
 });

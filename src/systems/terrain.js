@@ -1,10 +1,16 @@
 var Entity = require('../base/entity.js');
 var Terrain = require('../components/terrain.js');
+var Arable = require('../components/arable.js');
 var Position = require('../components/position.js');
 var Sprite = require('../components/sprite.js');
 var pairing = require('../helpers/pairing.js');
 var random = require('../base/random.js');
 var tiles = {};
+
+var componentMap = {
+  arable: Arable,
+  sprite: Sprite
+};
 
 function update() {
   Terrain.each(function (terrain) {
@@ -27,48 +33,65 @@ function update() {
 }
 
 function get(x, y) {
-  return Terrain.get(tiles[pairing(x, y)].id);
-}
-
-function plantable(x, y) {
-  var terrain = get(x, y);
-  return terrain && terrain.plantable && !terrain.planted;
-}
-
-function plant(entity, x, y) {
-  var terrain = get(x, y);
-  terrain.planted = entity.id;
-  return terrain;
+  return tiles[pairing(x, y)];
 }
 
 function generate(cols, rows) {
   for (var x = 0; x < cols; x++) {
     for (var y = 0; y < rows; y++) {
       var type = soil; // always soil for now
-      var water = random.int(type.water[0], type.water[1]);
-      var nutrients = random.int(type.nutrients[0], type.nutrients[1]);
-      var plantable = type.plantable;
 
       var entity = new Entity();
-      entity.set(Terrain, {water: water, nutrients: nutrients, plantable: plantable});
+      entity.set(Terrain, type.terrain);
       entity.set(Position, {x: x, y: y});
-      entity.set(Sprite, {layer: 0, frameset: type.frameSet});
+      generateArable(entity, type.arable);
+      generateSprite(entity, type.sprite);
     }
   }
+}
+
+function generateArable(entity, props) {
+  if (!props) return;
+  var water = random.int(props.water[0], props.water[1]);
+  var nutrients = random.int(props.nutrients[0], props.nutrients[1]);
+  return entity.set(Arable, {water: water, nutrients: nutrients});
+}
+
+function generateSprite(entity, props) {
+  if (!props) return;
+  return entity.set(Sprite, {layer: 0, frameset: props.frameSet});
+}
+
+function arable(x, y) {
+  var arable = Arable.get(get(x, y));
+  return arable && !arable.planted;
+}
+
+function plant(entity, x, y) {
+  var tile = get(x, y);
+  var arable = Arable.get(tile.id);
+  arable.planted = entity.id;
+  return arable;
 }
 
 module.exports = {
   update: update,
   get: get,
-  plantable: plantable,
+  arable: arable,
   plant: plant,
   generate: generate
 };
 
 // terrain types to randomly generate
 var soil = {
-  frameSet: 'tile-soil',
-  water: [20, 80],
-  nutrients: [60, 100],
-  plantable: true
+  terrain: {
+    type: 'soil'
+  },
+  sprite: {
+    frameSet: 'tile-soil'
+  },
+  arable: {
+    water: [20, 80],
+    nutrients: [60, 100]
+  }
 };

@@ -64,9 +64,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	var ControlSystem = __webpack_require__(146);
 	var SpriteSystem = __webpack_require__(147);
 	var TerrainSystem = __webpack_require__(148);
-	var GrowthSystem = __webpack_require__(153);
-	var MovementSystem = __webpack_require__(156);
-	var ActionSystem = __webpack_require__(157);
+	var GrowthSystem = __webpack_require__(154);
+	var MovementSystem = __webpack_require__(157);
+	var ActionSystem = __webpack_require__(158);
 
 	var game;
 	var registerComponent = function (name, component) {
@@ -101,8 +101,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  registerComponent('Terrain', __webpack_require__(149));
 	  registerComponent('Movable',  __webpack_require__(144));
 	  registerComponent('Position',  __webpack_require__(142));
-	  registerComponent('Growth',  __webpack_require__(154));
-	  registerComponent('Genome',  __webpack_require__(160));
+	  registerComponent('Growth',  __webpack_require__(155));
+	  registerComponent('Genome',  __webpack_require__(161));
 
 	  var view = game.start();
 	  document.body.appendChild(view);
@@ -46660,11 +46660,17 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var Entity = __webpack_require__(141);
 	var Terrain = __webpack_require__(149);
+	var Arable = __webpack_require__(150);
 	var Position = __webpack_require__(142);
 	var Sprite = __webpack_require__(145);
-	var pairing = __webpack_require__(150);
-	var random = __webpack_require__(151);
+	var pairing = __webpack_require__(151);
+	var random = __webpack_require__(152);
 	var tiles = {};
+
+	var componentMap = {
+	  arable: Arable,
+	  sprite: Sprite
+	};
 
 	function update() {
 	  Terrain.each(function (terrain) {
@@ -46687,50 +46693,67 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 	function get(x, y) {
-	  return Terrain.get(tiles[pairing(x, y)].id);
-	}
-
-	function plantable(x, y) {
-	  var terrain = get(x, y);
-	  return terrain && terrain.plantable && !terrain.planted;
-	}
-
-	function plant(entity, x, y) {
-	  var terrain = get(x, y);
-	  terrain.planted = entity.id;
-	  return terrain;
+	  return tiles[pairing(x, y)];
 	}
 
 	function generate(cols, rows) {
 	  for (var x = 0; x < cols; x++) {
 	    for (var y = 0; y < rows; y++) {
 	      var type = soil; // always soil for now
-	      var water = random.int(type.water[0], type.water[1]);
-	      var nutrients = random.int(type.nutrients[0], type.nutrients[1]);
-	      var plantable = type.plantable;
 
 	      var entity = new Entity();
-	      entity.set(Terrain, {water: water, nutrients: nutrients, plantable: plantable});
+	      entity.set(Terrain, type.terrain);
 	      entity.set(Position, {x: x, y: y});
-	      entity.set(Sprite, {layer: 0, frameset: type.frameSet});
+	      generateArable(entity, type.arable);
+	      generateSprite(entity, type.sprite);
 	    }
 	  }
+	}
+
+	function generateArable(entity, props) {
+	  if (!props) return;
+	  var water = random.int(props.water[0], props.water[1]);
+	  var nutrients = random.int(props.nutrients[0], props.nutrients[1]);
+	  return entity.set(Arable, {water: water, nutrients: nutrients});
+	}
+
+	function generateSprite(entity, props) {
+	  if (!props) return;
+	  return entity.set(Sprite, {layer: 0, frameset: props.frameSet});
+	}
+
+	function arable(x, y) {
+	  var arable = Arable.get(get(x, y));
+	  return arable && !arable.planted;
+	}
+
+	function plant(entity, x, y) {
+	  var tile = get(x, y);
+	  var arable = Arable.get(tile.id);
+	  arable.planted = entity.id;
+	  return arable;
 	}
 
 	module.exports = {
 	  update: update,
 	  get: get,
-	  plantable: plantable,
+	  arable: arable,
 	  plant: plant,
 	  generate: generate
 	};
 
 	// terrain types to randomly generate
 	var soil = {
-	  frameSet: 'tile-soil',
-	  water: [20, 80],
-	  nutrients: [60, 100],
-	  plantable: true
+	  terrain: {
+	    type: 'soil'
+	  },
+	  sprite: {
+	    frameSet: 'tile-soil'
+	  },
+	  arable: {
+	    water: [20, 80],
+	    nutrients: [60, 100]
+	  }
 	};
 
 
@@ -46738,15 +46761,11 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 149 */
 /***/ function(module, exports, __webpack_require__) {
 
-	//var _ = require('lodash');
+	
 	var Component = __webpack_require__(143);
 
 	var Terrain = new Component({
-	  water: 0,
-	  nutrients: 0,
-	  light: 0,
-	  plantable: false,
-	  planted: false
+	  type: null
 	});
 
 	module.exports = Terrain;
@@ -46754,6 +46773,23 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 150 */
+/***/ function(module, exports, __webpack_require__) {
+
+	//var _ = require('lodash');
+	var Component = __webpack_require__(143);
+
+	var Arable = new Component({
+	  water: 0,
+	  nutrients: 0,
+	  light: 0,
+	  planted: false
+	});
+
+	module.exports = Arable;
+
+
+/***/ },
+/* 151 */
 /***/ function(module, exports) {
 
 	// from http://sachiniscool.blogspot.com/2011/06/cantor-pairing-function-and-reversal.html
@@ -46761,11 +46797,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 151 */
+/* 152 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var MersenneTwister = __webpack_require__(152);
+	var MersenneTwister = __webpack_require__(153);
 	var mt = new MersenneTwister();
 
 	function seed(value) {
@@ -46788,7 +46824,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 152 */
+/* 153 */
 /***/ function(module, exports) {
 
 	/*
@@ -46999,16 +47035,17 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 153 */
+/* 154 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var Growth = __webpack_require__(154);
+	var Growth = __webpack_require__(155);
 	var Position = __webpack_require__(142);
 	var Sprite = __webpack_require__(145);
+	var Arable = __webpack_require__(150);
 	var TerrainSystem = __webpack_require__(148);
 
-	var GrowthStages = __webpack_require__(155);
+	var GrowthStages = __webpack_require__(156);
 
 	function update(gametime) {
 	  var DAY = 60*24;
@@ -47020,7 +47057,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var position = Position.get(entity.id);
 	    var sprite = Sprite.get(entity.id);
 
-	    var terrain = TerrainSystem.get(position.x, position.y);
+	    var tile = TerrainSystem.get(position.x, position.y);
+	    var arable = Arable.get(tile.id);
 
 	    var stage = growth.stage;
 	    var newEnergy = 0;
@@ -47028,8 +47066,8 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    growth.last_tick = growth.last_tick || time;
 	    if ((time - growth.last_tick) * growth.tick_rate > DAY) {
-	      newEnergy = energy(growth, terrain, time);
-	      newStage = GrowthStages[stage].update(growth, terrain, time);
+	      newEnergy = energy(growth, arable, time);
+	      newStage = GrowthStages[stage].update(growth, arable, time);
 	      growth.death_ticks += 1 * !newEnergy;
 	      growth.last_tick = time;
 	      growth.stage_ticks++;
@@ -47043,10 +47081,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	  });
 	}
 
-	function energy(growth, terrain) {
-	  var dWater = Math.abs(growth.affinity_water - terrain.water);
-	  var dSoil  = Math.abs(growth.affinity_soil  - terrain.nutrients);
-	  var dLight = Math.abs(growth.affinity_light - terrain.light);
+	function energy(growth, arable) {
+	  var dWater = Math.abs(growth.affinity_water - arable.water);
+	  var dSoil  = Math.abs(growth.affinity_soil  - arable.nutrients);
+	  var dLight = Math.abs(growth.affinity_light - arable.light);
 	  var water = dWater < 10 * growth.affinity_water / 5;
 	  var soil  = dSoil  < 10 * growth.affinity_soil  / 5;
 	  var light = dLight < 10 * growth.affinity_light / 5;
@@ -47060,7 +47098,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 154 */
+/* 155 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -47105,7 +47143,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 155 */
+/* 156 */
 /***/ function(module, exports) {
 
 	
@@ -47169,7 +47207,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 156 */
+/* 157 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -47252,11 +47290,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 157 */
+/* 158 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var Control = __webpack_require__(146);
-	var ActionPlant = __webpack_require__(158);
+	var ActionPlant = __webpack_require__(159);
 	var _ = __webpack_require__(2);
 
 	var actionMap = {
@@ -47281,16 +47319,16 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 158 */
+/* 159 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
 	var _ = __webpack_require__(2);
-	var Plant = __webpack_require__(159);
+	var Plant = __webpack_require__(160);
 	var Position = __webpack_require__(142);
-	var GenomeSystem = __webpack_require__(161);
+	var GenomeSystem = __webpack_require__(162);
 	var TerrainSystem = __webpack_require__(148);
-	var genomeLib = __webpack_require__(162);
+	var genomeLib = __webpack_require__(163);
 
 	var randomGenome = GenomeSystem.generator(genomeLib, 1);
 	var timeout = 500;
@@ -47319,17 +47357,17 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 159 */
+/* 160 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
 	var _ = __webpack_require__(2);
 	var Entity = __webpack_require__(141);
-	var Growth = __webpack_require__(154);
+	var Growth = __webpack_require__(155);
 	var Position = __webpack_require__(142);
 	var Sprite = __webpack_require__(145);
-	var Genome = __webpack_require__(160);
-	var GenomeSystem = __webpack_require__(161);
+	var Genome = __webpack_require__(161);
+	var GenomeSystem = __webpack_require__(162);
 
 	function Plant(chromosomes, x, y) {
 	  var plant = new Entity();
@@ -47346,7 +47384,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 	Plant.define = function (key, component, expression) {
-	  var definitions = __webpack_require__(163);
+	  var definitions = __webpack_require__(164);
 	  var definition = definitions[key];
 	  var value;
 	  for (var attr in definition) {
@@ -47356,7 +47394,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 	Plant.type = function (expression) {
-	  var types = __webpack_require__(164);
+	  var types = __webpack_require__(165);
 	  var traits = expression.traits;
 	  var counts = expression.counts;
 	  var output;
@@ -47376,7 +47414,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 160 */
+/* 161 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -47396,13 +47434,13 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 161 */
+/* 162 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
 	var _ = __webpack_require__(2);
-	var random = __webpack_require__(151);
-	var genomeLibrary = __webpack_require__(162);
+	var random = __webpack_require__(152);
+	var genomeLibrary = __webpack_require__(163);
 
 	function meiosis(genome) {
 	  var zygote = [];
@@ -47509,7 +47547,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 162 */
+/* 163 */
 /***/ function(module, exports) {
 
 	var library = {
@@ -47547,7 +47585,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 163 */
+/* 164 */
 /***/ function(module, exports) {
 
 	module.exports = {
@@ -47570,7 +47608,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 164 */
+/* 165 */
 /***/ function(module, exports) {
 
 	var types = [
