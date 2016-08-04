@@ -15,11 +15,11 @@ function perform(character) {
   var x = Math.round(position.x);
   var y = Math.round(position.y);
 
-  var plantable = TerrainSystem.plantable(x, y);
+  var canPlant = TerrainSystem.arable(x, y);
   var chromosomes;
   var plant;
 
-  if (plantable) {
+  if (canPlant) {
     chromosomes = randomGenome.next().value;
     plant = new Plant(chromosomes, x, y);
     TerrainSystem.plant(plant, x, y);
