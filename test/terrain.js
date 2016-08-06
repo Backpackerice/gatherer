@@ -14,6 +14,7 @@ describe('terrain component', function () {
 describe('terrain system', function () {
   it('can generate terrain', function () {
     TerrainSystem.generate(1, 1);
+    TerrainSystem.update();
     expect(TerrainSystem.get(0, 0)).to.be.an.instanceof(Entity);
   });
 
@@ -26,5 +27,10 @@ describe('terrain system', function () {
     var arable = TerrainSystem.plant(entity, 0, 0);
     expect(TerrainSystem.arable(0, 0)).to.equal(false);
     expect(arable.planted).to.equal(entity.id);
+  });
+
+  it('can clear its tiles', function () {
+    TerrainSystem.clear();
+    expect(TerrainSystem.get(0, 0)).to.be.falsy;
   });
 });

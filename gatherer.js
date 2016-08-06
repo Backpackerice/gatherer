@@ -46658,6 +46658,8 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 148 */
 /***/ function(module, exports, __webpack_require__) {
 
+	
+	var _ = __webpack_require__(2);
 	var Entity = __webpack_require__(141);
 	var Terrain = __webpack_require__(149);
 	var Arable = __webpack_require__(150);
@@ -46734,12 +46736,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return arable;
 	}
 
+	function clear() {
+	  var tileKeys = _.keys(tiles);
+	  _.each(tileKeys, function (key) {
+	    delete tiles[key];
+	  });
+	}
+
 	module.exports = {
 	  update: update,
 	  get: get,
 	  arable: arable,
 	  plant: plant,
-	  generate: generate
+	  generate: generate,
+	  clear: clear
 	};
 
 	// terrain types to randomly generate

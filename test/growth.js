@@ -8,10 +8,13 @@ var TerrainSystem = require('../src/systems/terrain.js');
 var GameTime = require('../src/base/time.js');
 
 describe('growth system', function () {
-  TerrainSystem.generate(4, 4);
-  TerrainSystem.update();
   var gametime = new GameTime(0, Date.now());
   var generator = GenomeSystem.generator();
+
+  before(function () {
+    TerrainSystem.generate(4, 4);
+    TerrainSystem.update();
+  });
 
   beforeEach(function () {
     for(var i=0; i<4; i++) {
@@ -28,5 +31,9 @@ describe('growth system', function () {
       expect(growth.last_tick).to.be.truthy;
       expect(growth.energy).to.be.at.least(0);
     });
+  });
+
+  after(function () {
+    TerrainSystem.clear();
   });
 });

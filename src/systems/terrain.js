@@ -1,3 +1,5 @@
+
+var _ = require('lodash');
 var Entity = require('../base/entity.js');
 var Terrain = require('../components/terrain.js');
 var Arable = require('../components/arable.js');
@@ -74,12 +76,20 @@ function plant(entity, x, y) {
   return arable;
 }
 
+function clear() {
+  var tileKeys = _.keys(tiles);
+  _.each(tileKeys, function (key) {
+    delete tiles[key];
+  });
+}
+
 module.exports = {
   update: update,
   get: get,
   arable: arable,
   plant: plant,
-  generate: generate
+  generate: generate,
+  clear: clear
 };
 
 // terrain types to randomly generate
