@@ -46481,8 +46481,12 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var Sprite = new Component({
 	  frameset: null,
+	  frameindex: 0,
+	  framesampling: null,
+	  fps: 0,
 	  layer: null,
-	  subsprites: []
+	  subsprites: [],
+	  last_tick: null
 	});
 
 	Sprite.Subsprite = function (frameset, x, y) {
@@ -46601,7 +46605,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    if (!sprite.frameset) return;
 
-	    var frameset = getFrame(sprite.frameset);
+	    var frameset = getFrame(sprite);
 	    var texture = PIXI.Texture.fromFrame(frameset);
 	    var x = position.x;
 	    var y = position.y;
@@ -46639,9 +46643,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return x * tileSize;
 	}
 
-	function getFrame(frame) {
+	function getFrame(sprite) {
+	  var frame = sprite.frameset;
+	  var index = sprite.frameindex;
 	  if (_.isNumber(frame)) return frame;
-	  return _.sample(frames[frame]);
+	  return frames[frame][index];
 	}
 
 	function getLayer(layer) {

@@ -3,8 +3,12 @@ var Component = require('../base/component.js');
 
 var Sprite = new Component({
   frameset: null,
+  frameindex: 0,
+  framesampling: null,
+  fps: 0,
   layer: null,
-  subsprites: []
+  subsprites: [],
+  last_tick: null
 });
 
 Sprite.Subsprite = function (frameset, x, y) {

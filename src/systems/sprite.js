@@ -46,7 +46,7 @@ function update() {
 
     if (!sprite.frameset) return;
 
-    var frameset = getFrame(sprite.frameset);
+    var frameset = getFrame(sprite);
     var texture = PIXI.Texture.fromFrame(frameset);
     var x = position.x;
     var y = position.y;
@@ -84,9 +84,11 @@ function toPosition(x) {
   return x * tileSize;
 }
 
-function getFrame(frame) {
+function getFrame(sprite) {
+  var frame = sprite.frameset;
+  var index = sprite.frameindex;
   if (_.isNumber(frame)) return frame;
-  return _.sample(frames[frame]);
+  return frames[frame][index];
 }
 
 function getLayer(layer) {
