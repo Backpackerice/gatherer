@@ -29,6 +29,13 @@ describe('gametime', function () {
     }, 10);
   });
 
+  it('can be set', function () {
+    GameTime.set(10, 1000);
+    var gametime = GameTime.now();
+    expect(gametime.time).to.equal(10);
+    expect(gametime.realtime).to.equal(1000);
+  });
+
   it('can be paused', function (done) {
     GameTime.start();
     GameTime.pause();

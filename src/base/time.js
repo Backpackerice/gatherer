@@ -55,30 +55,32 @@ var gametime;
 GameTime.MINUTE = 1200 / 100; // 1.2 sec per minute
 
 GameTime.start = function(starttime, realtime) {
-  realtime = realtime || Date.now();
-  starttime = starttime || 0;
-  gametime = new GameTime(starttime, realtime);
-  GameTime.unpause(realtime);
+  GameTime.unpause(starttime || 0, realtime);
 };
 
 GameTime.pause = function() {
   paused = true;
 };
 
-GameTime.unpause = function(realtime) {
-  realtime = realtime || Date.now();
+GameTime.unpause = function(starttime, realtime) {
   paused = false;
-  lastTick = realtime;
+  var current = GameTime.now();
+  var time = current && current.time || starttime || 0;
+  GameTime.set(time, realtime);
 };
 
 GameTime.update = function(realtime) {
   realtime = realtime || Date.now();
-  if (paused) return;
 
   var elapsed = (realtime - lastTick) / GameTime.MINUTE;
   var current = GameTime.now();
-  var time = current.time + elapsed;
+  var time = paused ? current.time : current.time + elapsed;
 
+  return GameTime.set(time, realtime);
+};
+
+GameTime.set = function (time, realtime) {
+  realtime = realtime || Date.now();
   lastTick = realtime;
   gametime = new GameTime(time, realtime);
   return gametime;

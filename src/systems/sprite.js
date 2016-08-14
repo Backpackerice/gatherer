@@ -28,7 +28,8 @@ function setup(stage, spritesheet) {
   _.each(layers, function (layer) { stage.addChild(layer); });
 }
 
-function update() {
+function update(gametime) {
+  var time = gametime.realtime;
   Sprite.each(function (sprite, i) {
     var entity = sprite.entity;
     var position = Position.get(entity.id);
