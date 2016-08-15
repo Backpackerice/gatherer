@@ -28,8 +28,7 @@ function setup(stage, spritesheet) {
   _.each(layers, function (layer) { stage.addChild(layer); });
 }
 
-function update(gametime) {
-  var time = gametime.realtime;
+function update(time) {
   Sprite.each(function (sprite, i) {
     var entity = sprite.entity;
     var position = Position.get(entity.id);
@@ -47,8 +46,8 @@ function update(gametime) {
 
     if (!sprite.frameset) return;
 
-    var frameset = getFrame(sprite);
-    var texture = PIXI.Texture.fromFrame(frameset);
+    var frame = updateFrame(sprite, time);
+    var texture = PIXI.Texture.fromFrame(frame);
     var x = position.x;
     var y = position.y;
     var baselineY = pixisprite.texture ? y + 1 - pixisprite.texture.height / tileBase : y;
@@ -59,6 +58,25 @@ function update(gametime) {
     pixisprite.position.set(modifiedX, modifiedY);
     pixisprite.texture = texture;
   });
+}
+
+function updateFrame(sprite, time) {
+  var spf = 1000 / sprite.fps;
+  var increment = sprite.fps && (time - sprite.last_tick >= spf);
+  var nextFrame = getFrame(sprite.frameset, sprite.frameindex + 1);
+
+  if (increment) {
+    if (nextFrame) sprite.frameindex++;
+    else sprite.frameindex = 0;
+    sprite.last_tick = time;
+  }
+
+  var frame = getFrame(sprite.frameset, sprite.frameindex);
+  return frame;
+}
+
+function getFrame(frameset, index) {
+  return frames[frameset][index];
 }
 
 function parseFrames(frames) {
@@ -83,13 +101,6 @@ function getPixi(i) {
 
 function toPosition(x) {
   return x * tileSize;
-}
-
-function getFrame(sprite) {
-  var frame = sprite.frameset;
-  var index = sprite.frameindex;
-  if (_.isNumber(frame)) return frame;
-  return frames[frame][index];
 }
 
 function getLayer(layer) {
