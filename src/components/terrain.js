@@ -1,7 +1,7 @@
 
 var Component = require('../base/component.js');
 
-var Terrain = new Component({
+var Terrain = new Component('terrain', {
   type: null
 });
 

@@ -6,7 +6,7 @@ var Entity = require('./entity.js');
 // @param defaults    default data
 // @param properties  optional object properties
 //
-var Component = function (defaults, properties) {
+var Component = function (name, defaults, properties) {
   var entities = {}; // hidden entity map
   var pool = []; // pool of destroyed components for re-use
 
@@ -32,8 +32,6 @@ var Component = function (defaults, properties) {
     register: function (entity) {
       entities[entity.id] = this;
       this.entity = entity;
-      if (this.initialize) this.initialize();
-
       return this;
     },
 
@@ -101,10 +99,17 @@ var Component = function (defaults, properties) {
     });
   };
 
+  Component.map.set(name, ComponentClass);
   return ComponentClass;
 };
 
-// @alias Component
+Component.map = new Map();
 Component.create = Component;
+Component.destroy = function (name) {
+  return Component.map.delete(name);
+};
 
+Component.clear = function () {
+  return Component.map.clear();
+};
 module.exports = Component;

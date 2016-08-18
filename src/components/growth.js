@@ -1,7 +1,7 @@
 
 var Component = require('../base/component.js');
 
-var Growth = new Component({
+var Growth = new Component('growth', {
   stage:   1,
   ticks:   0, // growth ticks (time units alive)
   cycle:   0, // life cycles

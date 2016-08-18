@@ -1,7 +1,7 @@
 
 var Component = require('../base/component.js');
 
-var Sprite = new Component({
+var Sprite = new Component('sprite', {
   frameset: null,
   frameindex: 0,
   fps: 0,

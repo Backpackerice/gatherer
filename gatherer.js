@@ -46329,7 +46329,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var Component = __webpack_require__(143);
 
-	var Position = new Component({
+	var Position = new Component('position', {
 	  x: -1, // grid positions
 	  y: -1
 	});
@@ -46355,7 +46355,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	// @param defaults    default data
 	// @param properties  optional object properties
 	//
-	var Component = function (defaults, properties) {
+	var Component = function (name, defaults, properties) {
 	  var entities = {}; // hidden entity map
 	  var pool = []; // pool of destroyed components for re-use
 
@@ -46381,8 +46381,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	    register: function (entity) {
 	      entities[entity.id] = this;
 	      this.entity = entity;
-	      if (this.initialize) this.initialize();
-
 	      return this;
 	    },
 
@@ -46450,12 +46448,19 @@ return /******/ (function(modules) { // webpackBootstrap
 	    });
 	  };
 
+	  Component.map.set(name, ComponentClass);
 	  return ComponentClass;
 	};
 
-	// @alias Component
+	Component.map = new Map();
 	Component.create = Component;
+	Component.destroy = function (name) {
+	  return Component.map.delete(name);
+	};
 
+	Component.clear = function () {
+	  return Component.map.clear();
+	};
 	module.exports = Component;
 
 
@@ -46466,7 +46471,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var Component = __webpack_require__(143);
 
-	var Movable = new Component({
+	var Movable = new Component('movable', {
 	  to_position: [null, null],
 	  speed: 0 // base speed in tiles per second
 	});
@@ -46481,7 +46486,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var Component = __webpack_require__(143);
 
-	var Sprite = new Component({
+	var Sprite = new Component('sprite', {
 	  frameset: null,
 	  frameindex: 0,
 	  fps: 0,
@@ -46793,7 +46798,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var Component = __webpack_require__(143);
 
-	var Terrain = new Component({
+	var Terrain = new Component('terrain', {
 	  type: null
 	});
 
@@ -46807,7 +46812,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	//var _ = require('lodash');
 	var Component = __webpack_require__(143);
 
-	var Arable = new Component({
+	var Arable = new Component('arable', {
 	  water: 0,
 	  nutrients: 0,
 	  light: 0,
@@ -47133,7 +47138,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var Component = __webpack_require__(143);
 
-	var Growth = new Component({
+	var Growth = new Component('growth', {
 	  stage:   1,
 	  ticks:   0, // growth ticks (time units alive)
 	  cycle:   0, // life cycles
@@ -47449,7 +47454,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var Component = __webpack_require__(143);
 
-	var Genome = new Component({
+	var Genome = new Component('genome', {
 	  chromosomes: [[]]
 	}, {
 	  ploidy: {

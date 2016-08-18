@@ -1,7 +1,7 @@
 
 var Component = require('../base/component.js');
 
-var Genome = new Component({
+var Genome = new Component('genome', {
   chromosomes: [[]]
 }, {
   ploidy: {
