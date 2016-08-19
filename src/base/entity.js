@@ -21,13 +21,15 @@ Entity.prototype.destroy = function () {
 Entity.prototype.toJSON = function () {
   var Component = require('./component.js');
   var components = Component.map;
-  var id = this.id;
-  var output = {};
+  var output = {
+    id: this.id,
+    destroyed: this.destroyed
+  };
 
   components.entries().forEach(function (entry) {
     var name = entry[0];
     var ComponentClass = entry[1];
-    var component = ComponentClass.get(id);
+    var component = ComponentClass.get(output.id);
 
     if (component) output[name] = component;
   });
