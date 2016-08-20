@@ -2,6 +2,7 @@ var _ = require('lodash');
 
 function Entity() {
   this.id = _.uniqueId('e');
+  this.destroyed = false;
   return this;
 }
 
@@ -26,11 +27,8 @@ Entity.prototype.toJSON = function () {
     destroyed: this.destroyed
   };
 
-  components.entries().forEach(function (entry) {
-    var name = entry[0];
-    var ComponentClass = entry[1];
+  components.forEach(function (ComponentClass, name) {
     var component = ComponentClass.get(output.id);
-
     if (component) output[name] = component;
   });
 

@@ -46303,6 +46303,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	function Entity() {
 	  this.id = _.uniqueId('e');
+	  this.destroyed = false;
 	  return this;
 	}
 
@@ -46327,11 +46328,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    destroyed: this.destroyed
 	  };
 
-	  components.entries().forEach(function (entry) {
-	    var name = entry[0];
-	    var ComponentClass = entry[1];
+	  components.forEach(function (ComponentClass, name) {
 	    var component = ComponentClass.get(output.id);
-
 	    if (component) output[name] = component;
 	  });
 
@@ -46396,7 +46394,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      eachAccepted(function (key) {
 	        json[key] = this[key];
 	      }.bind(this));
-	      json.entity = this.entity;
+	      json.entity = this.entity.id;
 	      return json;
 	    }
 	  };

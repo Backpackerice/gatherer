@@ -4,26 +4,29 @@ var Component = require('../src/base/component.js');
 
 describe('component factory', function () {
 
-  afterEach(function () {
+  var ComponentClass;
+
+  before(function () {
+    ComponentClass = new Component('test', {hello: 'world'});
+  });
+
+  after(function () {
     Component.clear();
   });
 
   it('creates a component class given a name and defaults', function () {
-    var ComponentClass = new Component('test', {hello: 'world'});
     var instance = new ComponentClass();
     expect(instance.hello).to.equal('world');
   });
 
   it('adds component classes to its map', function () {
     var map = Component.map;
-    var ComponentClass = new Component('test', {hello: 'world'});
     expect(map.has('test')).to.equal(true);
     expect(map.get('test')).to.equal(ComponentClass);
   });
 
   it('can destroy a created component, removing it from the map', function () {
     var map = Component.map;
-    new Component('test', {hello: 'world'});
     Component.destroy('test');
     expect(map.has('test')).to.equal(false);
   });

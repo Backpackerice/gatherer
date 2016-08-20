@@ -49,7 +49,7 @@ var Component = function (name, defaults, properties) {
       eachAccepted(function (key) {
         json[key] = this[key];
       }.bind(this));
-      json.entity = this.entity;
+      json.entity = this.entity.id;
       return json;
     }
   };
