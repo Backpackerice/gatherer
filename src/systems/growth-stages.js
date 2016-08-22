@@ -22,18 +22,18 @@ var Seed = new Stage(function (growth, terrain) {
 }, 'growth-0_1');
 
 var Sprout = new Stage(function (growth, terrain) {
-  growth.roots += growth.cost_root * (terrain.water + 0.5 * terrain.soil);
-  growth.stems += growth.cost_stem * (terrain.water + terrain.soil);
+  growth.roots += growth.cost_root * (terrain.water + 0.5 * terrain.nutrients);
+  growth.stems += growth.cost_stem * (terrain.water + terrain.nutrients);
   growth.leaves += 0.5 * growth.cost_leaf * (terrain.water + 2 * terrain.light);
   if (growth.leaves > 5) return MATURE;
   return SPROUT;
 }, 'growth-1_1');
 
 var Mature = new Stage(function (growth, terrain) {
-  growth.roots += 0.5 * growth.cost_root * (terrain.water + 0.5 * terrain.soil);
-  growth.stems += 0.5 * growth.cost_stem * (terrain.water + terrain.soil);
+  growth.roots += 0.5 * growth.cost_root * (terrain.water + 0.5 * terrain.nutrients);
+  growth.stems += 0.5 * growth.cost_stem * (terrain.water + terrain.nutrients);
   growth.leaves += 0.5 * growth.cost_leaf * (terrain.water + 2 * terrain.light);
-  if (growth.leaves + growth.roots + growth.stems > 20 && growth.ticks > 20) return FLOWERING;
+  if (growth.leaves + growth.roots + growth.stems > 20 && growth.ticks > 8) return FLOWERING;
   return MATURE;
 }, 'growth-2_1');
 

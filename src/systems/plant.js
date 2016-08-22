@@ -17,7 +17,6 @@ function Plant(chromosomes, x, y) {
   var expression = GenomeSystem.express(genome);
 
   Plant.define('growth', growth, expression);
-
   return plant;
 }
 
