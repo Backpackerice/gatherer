@@ -46710,11 +46710,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	var random = __webpack_require__(152);
 	var tiles = {};
 
-	var componentMap = {
-	  arable: Arable,
-	  sprite: Sprite
-	};
-
 	function update() {
 	  Terrain.each(function (terrain) {
 	    var entity = terrain.entity;
@@ -46802,6 +46797,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    frameSet: 'tile-soil'
 	  },
 	  arable: {
+	    light: [50, 50],
 	    water: [20, 80],
 	    nutrients: [60, 100]
 	  }

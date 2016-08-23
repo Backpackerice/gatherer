@@ -9,11 +9,6 @@ var pairing = require('../helpers/pairing.js');
 var random = require('../base/random.js');
 var tiles = {};
 
-var componentMap = {
-  arable: Arable,
-  sprite: Sprite
-};
-
 function update() {
   Terrain.each(function (terrain) {
     var entity = terrain.entity;
@@ -101,6 +96,7 @@ var soil = {
     frameSet: 'tile-soil'
   },
   arable: {
+    light: [50, 50],
     water: [20, 80],
     nutrients: [60, 100]
   }
