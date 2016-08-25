@@ -47236,18 +47236,21 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var costRoot = growth.cost_root;
 	    var costStem = growth.cost_stem * 0.8;
 	    var costLeaf = growth.cost_leaf * 0.8;
+	    var maxLeaves = Math.max(growth.stems - growth.leaves, 0);
+	    var maxStems = Math.max(growth.leaves + 1 - growth.stems, 0);
+	    var maxRoots = Math.max(growth.stems + growth.leaves - growth.roots, 0);
 
-	    var numLeaf = Math.min(Math.floor(energy / costLeaf), growth.stems / 2);
-	    spent += numLeaf * costLeaf;
-	    var numStem = Math.min(Math.floor((energy - spent)/costStem), growth.leaf * 2 + 1);
-	    spent += numStem * costStem;
-	    var numRoot = Math.floor((energy - spent)/costRoot);
-	    spent += numRoot * costRoot;
+	    var numLeaves = Math.min(Math.floor(energy / costLeaf), maxLeaves);
+	    spent += numLeaves * costLeaf;
+	    var numStems = Math.min(Math.floor((energy - spent)/costStem), maxStems);
+	    spent += numStems * costStem;
+	    var numRoots = Math.min(Math.floor((energy - spent)/costRoot), maxRoots);
+	    spent += numRoots * costRoot;
 
 	    growth.energy -= spent;
-	    growth.roots += numRoot;
-	    growth.stems += numStem;
-	    growth.leaves += numLeaf;
+	    growth.roots += numRoots;
+	    growth.stems += numStems;
+	    growth.leaves += numLeaves;
 
 	    return growth;
 	  },
@@ -47263,12 +47266,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var costRoot = growth.cost_root;
 	    var costStem = growth.cost_stem;
 	    var costLeaf = growth.cost_leaf;
+	    var maxLeaves = Math.max(growth.stems - growth.leaves, 0);
+	    var maxStems = Math.max(growth.leaves + 1 - growth.stems, 0);
+	    var maxRoots = Math.max(growth.stems + growth.leaves - growth.roots, 0);
 
-	    var numLeaves = Math.min(Math.floor(energy / costLeaf), growth.stems);
+	    var numLeaves = Math.min(Math.floor(energy / costLeaf), maxLeaves);
 	    spent += numLeaves * costLeaf;
-	    var numStems = Math.min(Math.floor((energy - spent)/costStem), growth.leaf + 1);
+	    var numStems = Math.min(Math.floor((energy - spent)/costStem), maxStems);
 	    spent += numStems * costStem;
-	    var numRoots = Math.floor((energy - spent)/costRoot);
+	    var numRoots = Math.min(Math.floor((energy - spent)/costRoot), maxRoots);
 	    spent += numRoots * costRoot;
 
 	    growth.energy -= spent;
