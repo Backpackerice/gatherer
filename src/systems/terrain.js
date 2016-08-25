@@ -51,7 +51,8 @@ function generateArable(entity, props) {
   if (!props) return;
   var water = random.int(props.water[0], props.water[1]);
   var nutrients = random.int(props.nutrients[0], props.nutrients[1]);
-  return entity.set(Arable, {water: water, nutrients: nutrients});
+  var light = random.int(props.light[0], props.light[1]);
+  return entity.set(Arable, {water: water, nutrients: nutrients, light: light});
 }
 
 function generateSprite(entity, props) {

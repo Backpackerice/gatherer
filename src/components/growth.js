@@ -29,11 +29,11 @@ var Growth = new Component('growth', {
   stage_rate: 1, // ticks per stage multiplier
 
   // energy cost for each part, cost is paid during a tick
-  cost_root:   15,
-  cost_stem:   20,
-  cost_leaf:   15,
-  cost_flower: 50,
-  cost_seed:   40
+  cost_root:   8,
+  cost_stem:   12,
+  cost_leaf:   10,
+  cost_flower: 20,
+  cost_seed:   15
 });
 
 module.exports = Growth;
