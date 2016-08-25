@@ -27,8 +27,11 @@ function update(gametime) {
     growth.last_tick = growth.last_tick || time;
     if ((time - growth.last_tick) * growth.tick_rate > DAY) {
       newEnergy = energy(growth, arable, time);
-      newStage = GrowthStages[stage].update(growth, arable, time);
       growth.death_ticks += 1 * !newEnergy;
+
+      GrowthStages[stage].update(growth, arable, time);
+      newStage = GrowthStages[stage].next(growth, arable, time);
+
       growth.last_tick = time;
       growth.stage_ticks++;
       growth.ticks++;

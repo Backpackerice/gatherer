@@ -30,8 +30,8 @@ var Growth = new Component('growth', {
 
   // energy cost for each part, cost is paid during a tick
   cost_root:   15,
-  cost_stem:   30,
-  cost_leaf:   10,
+  cost_stem:   20,
+  cost_leaf:   15,
   cost_flower: 50,
   cost_seed:   40
 });
