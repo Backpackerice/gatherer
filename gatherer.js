@@ -151,7 +151,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  },
 
 	  onReady: function (loader, resources) {
-	    GameTime.start();
+	    GameTime.unpause();
 	    this.ready(this, loader, resources);
 	    this.loop();
 	  },
@@ -46233,39 +46233,40 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	// Static methods
 	var paused = true;
-	var lastTick;
 	var gametime;
 
-	GameTime.MINUTE = 1200 / 100; // 1.2 sec per minute
+	GameTime.MINUTE = 1200; // 1.2 sec per minute
 
-	GameTime.start = function(starttime, realtime) {
-	  GameTime.unpause(starttime || 0, realtime);
+	GameTime.start = function (realtime) {
+	  GameTime.unpause();
+	  return GameTime.update(realtime);
 	};
 
 	GameTime.pause = function() {
 	  paused = true;
 	};
 
-	GameTime.unpause = function(starttime, realtime) {
+	GameTime.unpause = function() {
 	  paused = false;
-	  var current = GameTime.now();
-	  var time = current && current.time || starttime || 0;
-	  GameTime.set(time, realtime);
 	};
 
 	GameTime.update = function(realtime) {
 	  realtime = realtime || Date.now();
 
-	  var elapsed = (realtime - lastTick) / GameTime.MINUTE;
 	  var current = GameTime.now();
-	  var time = paused ? current.time : current.time + elapsed;
+	  var elapsed = 0;
+	  var time = 0;
+
+	  if (current) {
+	    elapsed = (realtime - current.realtime) / GameTime.MINUTE;
+	    time = paused ? current.time : current.time + elapsed;
+	  }
 
 	  return GameTime.set(time, realtime);
 	};
 
 	GameTime.set = function (time, realtime) {
 	  realtime = realtime || Date.now();
-	  lastTick = realtime;
 	  gametime = new GameTime(time, realtime);
 	  return gametime;
 	};
@@ -46708,6 +46709,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var stage;
 	var filter;
 	var count = 0;
+	var lastTime;
 
 	function setup(container) {
 	  stage = container;
@@ -46715,9 +46717,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	  stage.filters = [filter];
 	}
 
-	function update() {
+	function update(gametime) {
+	  if (lastTime != null && gametime.minutes === lastTime) {
+	    return;
+	  }
+
 	  count += 0.1;
 	  filter.hue(count);
+	  console.log(gametime.hour + ':' + gametime.minute);
+
+	  lastTime = gametime.minutes;
 	}
 
 	module.exports = {

@@ -8,7 +8,7 @@ var Entity = require('../src/base/entity.js');
 
 describe('movement system', function () {
   var time = 1000;
-  GameTime.start(0, time);
+  GameTime.start(time);
 
   it('updates the position of movable entities', function () {
     var entity = new Entity();
