@@ -44,8 +44,8 @@ Game.prototype = {
     this.renderers.push(render);
   },
 
-  update: function (time) {
-    var newGameTime = GameTime.update(time); // Tick time first
+  update: function () {
+    var newGameTime = GameTime.update(); // Tick time first
     _.each(this.updaters, function (update) {
       update(newGameTime);
     });

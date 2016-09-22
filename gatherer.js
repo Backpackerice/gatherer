@@ -75,6 +75,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  game.registerUpdate(component.cleanup.bind(component));
 	};
 
+	Gatherer.time = __webpack_require__(167);
+
 	Gatherer.start = function () {
 	  game = new Game({
 	    assets: ['assets/sprites.json'],
@@ -164,8 +166,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.renderers.push(render);
 	  },
 
-	  update: function (time) {
-	    var newGameTime = GameTime.update(time); // Tick time first
+	  update: function () {
+	    var newGameTime = GameTime.update(); // Tick time first
 	    _.each(this.updaters, function (update) {
 	      update(newGameTime);
 	    });
@@ -47872,6 +47874,24 @@ return /******/ (function(modules) { // webpackBootstrap
 	];
 
 	module.exports = types;
+
+
+/***/ },
+/* 167 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var GameTime = __webpack_require__(139);
+
+	function cycle(elapsedMinutes) {
+	  var thisTime = GameTime.now();
+	  GameTime.set(thisTime.time + elapsedMinutes);
+	}
+
+	module.exports = {
+	  cycle,
+	  HOUR: 60,
+	  DAY: 60 * 24
+	};
 
 
 /***/ }

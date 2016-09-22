@@ -19,6 +19,8 @@ var registerComponent = function (name, component) {
   game.registerUpdate(component.cleanup.bind(component));
 };
 
+Gatherer.time = require('./helpers/timecycle.js');
+
 Gatherer.start = function () {
   game = new Game({
     assets: ['assets/sprites.json'],
