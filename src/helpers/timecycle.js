@@ -1,12 +1,13 @@
 var GameTime = require('../base/time.js');
 
-function cycle(elapsedMinutes) {
+function wait(elapsedMinutes) {
   var thisTime = GameTime.now();
-  GameTime.set(thisTime.time + elapsedMinutes);
+  var waitTime = GameTime.set(thisTime.time + elapsedMinutes);
+  return waitTime.toString();
 }
 
 module.exports = {
-  cycle,
+  wait,
   HOUR: 60,
   DAY: 60 * 24
 };

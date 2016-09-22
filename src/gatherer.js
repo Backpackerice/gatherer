@@ -19,6 +19,7 @@ var registerComponent = function (name, component) {
   game.registerUpdate(component.cleanup.bind(component));
 };
 
+// Development Testing
 Gatherer.time = require('./helpers/timecycle.js');
 
 Gatherer.start = function () {

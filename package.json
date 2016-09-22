@@ -7,7 +7,7 @@
     "prepublish": "webpack",
     "test": "mocha"
   },
-  "dependencies": {
+  "devDependencies": {
     "brfs": "^1.4.3",
     "chai": "^3.5.0",
     "json-loader": "^0.5.4",

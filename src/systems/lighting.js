@@ -7,7 +7,7 @@ var lastTime;
 
 var markers = [
   {
-    time: 1 * 60, // 1AM
+    time: 0 * 60, // 12AM
     matrix: [
       0.2, 0, 0, 0, 0,
       0, 0.2, 0, 0, 0,
@@ -34,11 +34,21 @@ var markers = [
     ]
   },
   {
-    time: 21 * 60, // 7 PM
+    time: 21 * 60, // 9 PM
+    lastTime: -3 * 60,
     matrix: [
       0.5, 0, 0, 0, 0,
       0, 0.5, 0, 0, 0,
       0, 0, 0.8, 0, 0,
+      0, 0, 0, 1, 0
+    ]
+  },
+  {
+    time: 24 * 60, // 12AM
+    matrix: [
+      0.2, 0, 0, 0, 0,
+      0, 0.2, 0, 0, 0,
+      0, 0, 0.6, 0, 0,
       0, 0, 0, 1, 0
     ]
   }
@@ -54,23 +64,21 @@ function update(gametime) {
   if (lastTime != null && gametime.minutes === lastTime) {
     return;
   }
-  filter.matrix = timeToMatrix(gametime.hour * 60 + gametime.minute);
+  filter.matrix = timeToMatrix(gametime.minutes);
   lastTime = gametime.minutes;
 }
 
 function timeToMatrix(minutes) {
-  var last = markers[markers.length - 1];
-  var next = markers[0];
+  var cycle = minutes % (24 * 60);
+  var marker = markers[0];
+  var next, last;
+  var i = 0;
 
-  markers.forEach(function (marker) {
-    if (minutes > marker.time) {
-      last = marker;
-    }
-
-    if (minutes < marker.time && next === marker[0]) {
-      next = marker;
-    }
-  });
+  do {
+    next = markers[i + 1];
+    last = marker;
+    marker = markers[++i];
+  } while (marker.time < cycle);
 
   var amt = (minutes - last.time) / (next.time - last.time);
   return interpolate(last.matrix, next.matrix, amt);
