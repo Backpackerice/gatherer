@@ -46724,30 +46724,66 @@ return /******/ (function(modules) { // webpackBootstrap
 	    ]
 	  },
 	  {
-	    time: 7 * 60, // 7AM
+	    time: 4 * 60, // 4AM
 	    matrix: [
-	      1, 0, 0, 0, 0,
+	      0.5, 0, 0, 0, 0,
 	      0, 0.5, 0, 0, 0,
-	      0, 0, 0.75, 0, 0,
+	      0, 0, 0.8, 0, 0,
 	      0, 0, 0, 1, 0
 	    ]
 	  },
 	  {
-	    time: 13 * 60, // 1PM
+	    time: 6 * 60, // 6AM
 	    matrix: [
-	      1, 0, 0, 0, 0,
-	      0, 1, 0, 0, 0,
+	      0.9, 0, 0, 0, 0,
+	      0, 0.75, 0, 0, 0,
+	      0, 0, 0.5, 0, 0,
+	      0, 0, 0, 1, 0
+	    ]
+	  },
+	  {
+	    time: 7 * 60, // 7AM
+	    matrix: [
+	      0.8, 0, 0, 0, 0,
+	      0, 0.8, 0, 0, 0,
 	      0, 0, 0.9, 0, 0,
 	      0, 0, 0, 1, 0
 	    ]
 	  },
 	  {
-	    time: 21 * 60, // 9 PM
+	    time: 12 * 60, // 12PM
+	    matrix: [
+	      1, 0, 0, 0, 0,
+	      0, 1, 0, 0, 0,
+	      0, 0, 1, 0, 0,
+	      0, 0, 0, 1, 0
+	    ]
+	  },
+	  {
+	    time: 17 * 60, // 5PM
+	    matrix: [
+	      1, 0, 0, 0, 0,
+	      0, 1, 0, 0, 0,
+	      0, 0, 1, 0, 0,
+	      0, 0, 0, 1, 0
+	    ]
+	  },
+	  {
+	    time: 19 * 60, // 7PM
+	    matrix: [
+	      0.9, 0, 0, 0, 0,
+	      0, 0.75, 0, 0, 0,
+	      0, 0, 0.5, 0, 0,
+	      0, 0, 0, 1, 0
+	    ]
+	  },
+	  {
+	    time: 21 * 60, // 9PM
 	    lastTime: -3 * 60,
 	    matrix: [
-	      0.5, 0, 0, 0, 0,
-	      0, 0.5, 0, 0, 0,
-	      0, 0, 0.8, 0, 0,
+	      0.7, 0, 0, 0, 0,
+	      0, 0.7, 0, 0, 0,
+	      0, 0, 0.9, 0, 0,
 	      0, 0, 0, 1, 0
 	    ]
 	  },
@@ -46788,7 +46824,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    marker = markers[++i];
 	  } while (marker.time < cycle);
 
-	  var amt = (minutes - last.time) / (next.time - last.time);
+	  var amt = (cycle - last.time) / (next.time - last.time);
 	  return interpolate(last.matrix, next.matrix, amt);
 	}
 
