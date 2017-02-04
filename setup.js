@@ -1,5 +1,5 @@
 const fs = require('fs');
-const Canvas = require('canvas');
+const Canvas = require('canvas-prebuilt');
 const PlantTexture = require('plant-texture');
 
 const herbCanvas = new Canvas();

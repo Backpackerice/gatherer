@@ -4,13 +4,12 @@
   "version": "1.0.0",
   "main": "gatherer.js",
   "scripts": {
-    "prepublish": "webpack",
-    "setup": "node setup.js",
+    "prepublish": "webpack; node setup.js",
     "test": "mocha"
   },
   "devDependencies": {
     "brfs": "^1.4.3",
-    "canvas": "^1.6.2",
+    "canvas-prebuilt": "^1.6.0",
     "chai": "^3.5.0",
     "json-loader": "^0.5.4",
     "lodash": "^4.12.0",
