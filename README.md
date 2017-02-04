@@ -11,3 +11,9 @@ Development Setup
 brew install pkg-config cairo libpng jpeg giflib
 npm install
 ```
+
+If you need to regenerate the sprites:
+
+```
+npm run setup
+```

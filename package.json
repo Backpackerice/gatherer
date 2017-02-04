@@ -4,7 +4,8 @@
   "version": "1.0.0",
   "main": "gatherer.js",
   "scripts": {
-    "prepublish": "webpack; node setup.js",
+    "prepublish": "webpack",
+    "setup": "node setup.js",
     "test": "mocha"
   },
   "devDependencies": {
