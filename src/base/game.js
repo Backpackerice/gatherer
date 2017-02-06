@@ -45,7 +45,11 @@ Game.prototype = {
   },
 
   update: function () {
+    var oldGameTime = GameTime.now();
     var newGameTime = GameTime.update(); // Tick time first
+    if (oldGameTime && newGameTime.days > oldGameTime.days) {
+      console.log(newGameTime.days);
+    }
     _.each(this.updaters, function (update) {
       update(newGameTime);
     });

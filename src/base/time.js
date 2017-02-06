@@ -51,7 +51,7 @@ GameTime.prototype.toString = function () {
 var paused = true;
 var gametime;
 
-GameTime.MINUTE = 1200; // 1.2 sec per minute
+GameTime.MINUTE = 12; // 1.2 sec per minute
 
 GameTime.start = function (realtime) {
   GameTime.unpause();

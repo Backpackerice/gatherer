@@ -168,7 +168,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	  },
 
 	  update: function () {
+	    var oldGameTime = GameTime.now();
 	    var newGameTime = GameTime.update(); // Tick time first
+	    if (oldGameTime && newGameTime.days > oldGameTime.days) {
+	      console.log(newGameTime.days);
+	    }
 	    _.each(this.updaters, function (update) {
 	      update(newGameTime);
 	    });
@@ -45523,7 +45527,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var paused = true;
 	var gametime;
 
-	GameTime.MINUTE = 1200; // 1.2 sec per minute
+	GameTime.MINUTE = 12; // 1.2 sec per minute
 
 	GameTime.start = function (realtime) {
 	  GameTime.unpause();
@@ -46620,11 +46624,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	  stage_rate: 1, // ticks per stage multiplier
 
 	  // energy cost for each part, cost is paid during a tick
-	  cost_root:   8,
-	  cost_stem:   12,
-	  cost_leaf:   10,
-	  cost_flower: 20,
-	  cost_seed:   15
+	  cost_root:   2,
+	  cost_stem:   3,
+	  cost_leaf:   5,
+	  cost_flower: 10,
+	  cost_seed:   8
 	});
 
 	module.exports = Growth;
