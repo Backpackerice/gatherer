@@ -1,3 +1,5 @@
+var _ = require('lodash');
+
 var Gatherer = {};
 var Game = require('./base/game.js');
 
@@ -24,9 +26,20 @@ Gatherer.time = require('./helpers/timecycle.js');
 
 Gatherer.start = function () {
   game = new Game({
-    assets: ['assets/sprites.json'],
+    assets: ['assets/sprites.json', 'assets/herbs.json'],
     ready: function (game, loader, resources) {
-      SpriteSystem.setup(game.stage, resources['assets/sprites.json'].data);
+      var assetResources = [
+        resources['assets/sprites.json'],
+        resources['assets/herbs.json']
+      ];
+      var tile = assetResources[0].data.meta.tile;
+      var frames = _.chain(assetResources)
+        .map(function (r) { return r.data.frames; })
+        .flatten().value();
+      var textures = _.chain(assetResources)
+        .map(function (r) { return _.map(r.textures); })
+        .flatten().value();
+      SpriteSystem.setup(game.stage, tile, frames, textures);
       LightingSystem.setup(game.stage);
       ControlSystem.setup(document.body);
       TerrainSystem.generate(12, 12);

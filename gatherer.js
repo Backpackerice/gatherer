@@ -54,8 +54,10 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 0 */
 /***/ function(module, exports, __webpack_require__) {
 
+	var _ = __webpack_require__(1);
+
 	var Gatherer = {};
-	var Game = __webpack_require__(1);
+	var Game = __webpack_require__(3);
 
 	// Entities
 	var Character = __webpack_require__(138);
@@ -80,9 +82,20 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	Gatherer.start = function () {
 	  game = new Game({
-	    assets: ['assets/sprites.json'],
+	    assets: ['assets/sprites.json', 'assets/herbs.json'],
 	    ready: function (game, loader, resources) {
-	      SpriteSystem.setup(game.stage, resources['assets/sprites.json'].data);
+	      var assetResources = [
+	        resources['assets/sprites.json'],
+	        resources['assets/herbs.json']
+	      ];
+	      var tile = assetResources[0].data.meta.tile;
+	      var frames = _.chain(assetResources)
+	        .map(function (r) { return r.data.frames; })
+	        .flatten().value();
+	      var textures = _.chain(assetResources)
+	        .map(function (r) { return _.map(r.textures); })
+	        .flatten().value();
+	      SpriteSystem.setup(game.stage, tile, frames, textures);
 	      LightingSystem.setup(game.stage);
 	      ControlSystem.setup(document.body);
 	      TerrainSystem.generate(12, 12);
@@ -119,92 +132,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 1 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var _ = __webpack_require__(2);
-	var PIXI = __webpack_require__(4);
-	var GameTime = __webpack_require__(137);
-
-	function Game (options) {
-	  this.width = options.width || window.innerWidth;
-	  this.height = options.height || window.innerHeight;
-	  this.stage = options.stage || new PIXI.Container(0x231b17);
-	  this.assets = options.assets || [];
-	  this.ready = options.ready || _.noop;
-	  this.progress = options.progress || _.noop;
-
-	  this.updaters = [];
-	  this.renderers = [];
-	  return this;
-	}
-
-	Game.prototype = {
-	  start: function (view) {
-	    PIXI.SCALE_MODES.DEFAULT = PIXI.SCALE_MODES.NEAREST;
-
-	    var loader = new PIXI.loaders.Loader();
-	    loader.add(this.assets);
-	    loader.on('complete', this.onReady.bind(this));
-	    loader.load();
-
-	    this.renderer = new PIXI.autoDetectRenderer(
-	      this.width, this.height, {view: view}
-	    );
-	    return this.renderer.view;
-	  },
-
-	  onReady: function (loader, resources) {
-	    GameTime.unpause();
-	    this.ready(this, loader, resources);
-	    this.loop();
-	  },
-
-	  registerUpdate: function (update) {
-	    this.updaters.push(update);
-	  },
-
-	  registerRender: function (render) {
-	    this.renderers.push(render);
-	  },
-
-	  update: function () {
-	    var oldGameTime = GameTime.now();
-	    var newGameTime = GameTime.update(); // Tick time first
-	    if (oldGameTime && newGameTime.days > oldGameTime.days) {
-	      console.log(newGameTime.days);
-	    }
-	    _.each(this.updaters, function (update) {
-	      update(newGameTime);
-	    });
-	  },
-
-	  render: function (time) {
-	    this.renderer.render(this.stage);
-	    _.each(this.renderers, function (render) {
-	      render(time);
-	    });
-	  },
-
-	  loop: function () {
-	    var lastTime = null;
-	    var animate = function (time) {
-	          if (!lastTime) lastTime = time;
-	          while (lastTime <= time) {
-	            this.update(lastTime);
-	            lastTime += 10; // 10 ms update batching
-	          }
-	          this.render(time);
-	          this.frame = requestAnimationFrame(animate);
-	        }.bind(this);
-	    this.frame = requestAnimationFrame(animate);
-	  }
-	};
-
-	module.exports = Game;
-
-
-/***/ },
-/* 2 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;/* WEBPACK VAR INJECTION */(function(global, module) {/**
@@ -17292,10 +17219,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	}.call(this));
 
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(3)(module)))
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(2)(module)))
 
 /***/ },
-/* 3 */
+/* 2 */
 /***/ function(module, exports) {
 
 	module.exports = function(module) {
@@ -17308,6 +17235,92 @@ return /******/ (function(modules) { // webpackBootstrap
 		}
 		return module;
 	}
+
+
+/***/ },
+/* 3 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var _ = __webpack_require__(1);
+	var PIXI = __webpack_require__(4);
+	var GameTime = __webpack_require__(137);
+
+	function Game (options) {
+	  this.width = options.width || window.innerWidth;
+	  this.height = options.height || window.innerHeight;
+	  this.stage = options.stage || new PIXI.Container(0x231b17);
+	  this.assets = options.assets || [];
+	  this.ready = options.ready || _.noop;
+	  this.progress = options.progress || _.noop;
+
+	  this.updaters = [];
+	  this.renderers = [];
+	  return this;
+	}
+
+	Game.prototype = {
+	  start: function (view) {
+	    PIXI.SCALE_MODES.DEFAULT = PIXI.SCALE_MODES.NEAREST;
+
+	    var loader = new PIXI.loaders.Loader();
+	    loader.add(this.assets);
+	    loader.on('complete', this.onReady.bind(this));
+	    loader.load();
+
+	    this.renderer = new PIXI.autoDetectRenderer(
+	      this.width, this.height, {view: view}
+	    );
+	    return this.renderer.view;
+	  },
+
+	  onReady: function (loader, resources) {
+	    GameTime.unpause();
+	    this.ready(this, loader, resources);
+	    this.loop();
+	  },
+
+	  registerUpdate: function (update) {
+	    this.updaters.push(update);
+	  },
+
+	  registerRender: function (render) {
+	    this.renderers.push(render);
+	  },
+
+	  update: function () {
+	    var oldGameTime = GameTime.now();
+	    var newGameTime = GameTime.update(); // Tick time first
+	    if (oldGameTime && newGameTime.days > oldGameTime.days) {
+	      console.log(newGameTime.days);
+	    }
+	    _.each(this.updaters, function (update) {
+	      update(newGameTime);
+	    });
+	  },
+
+	  render: function (time) {
+	    this.renderer.render(this.stage);
+	    _.each(this.renderers, function (render) {
+	      render(time);
+	    });
+	  },
+
+	  loop: function () {
+	    var lastTime = null;
+	    var animate = function (time) {
+	          if (!lastTime) lastTime = time;
+	          while (lastTime <= time) {
+	            this.update(lastTime);
+	            lastTime += 10; // 10 ms update batching
+	          }
+	          this.render(time);
+	          this.frame = requestAnimationFrame(animate);
+	        }.bind(this);
+	    this.frame = requestAnimationFrame(animate);
+	  }
+	};
+
+	module.exports = Game;
 
 
 /***/ },
@@ -45595,7 +45608,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 139 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var _ = __webpack_require__(2);
+	var _ = __webpack_require__(1);
 
 	function Entity() {
 	  this.id = _.uniqueId('e');
@@ -45639,7 +45652,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 140 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var _ = __webpack_require__(2);
+	var _ = __webpack_require__(1);
 	var Entity = __webpack_require__(139);
 
 	// Component Factory
@@ -45880,20 +45893,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	var Sprite = __webpack_require__(143);
 	var Position = __webpack_require__(141);
 	var PIXI = __webpack_require__(4);
-	var _ = __webpack_require__(2);
+	var _ = __webpack_require__(1);
 
 	var scaleVal;
 	var scale;
 	var tileBase;
 	var tileSize;
 	var layers;
-	var frames;
+	var textures;
 	var pixisprites;
 
-	function setup(stage, spritesheet) {
+	function setup(stage, tile, _frames, _textures) {
 	  scaleVal = 4;
 	  scale = {x: scaleVal, y: scaleVal};
-	  tileBase = spritesheet.meta.tile;
+	  tileBase = tile;
 	  tileSize = tileBase * scaleVal;
 	  layers = [ // 4 layers
 	    new PIXI.Container(), // 0: background
@@ -45901,7 +45914,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    new PIXI.Container(), // 2: foreground (player)
 	    new PIXI.Container()  // 3: interface
 	  ];
-	  frames = parseFrames(spritesheet.frames);
+
+	  textures = parseTextures(_frames, _textures);
 	  pixisprites = [];
 	  _.each(layers, function (layer) { stage.addChild(layer); });
 	}
@@ -45924,8 +45938,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    if (!sprite.frameset) return;
 
-	    var frame = updateFrame(sprite, time);
-	    var texture = PIXI.Texture.fromFrame(frame);
+	    var texture = updateTexture(sprite, time);
 	    var x = position.x;
 	    var y = position.y;
 	    var baselineY = pixisprite.texture ? y + 1 - pixisprite.texture.height / tileBase : y;
@@ -45938,10 +45951,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	  });
 	}
 
-	function updateFrame(sprite, time) {
+	function updateTexture(sprite, time) {
 	  var spf = 1000 / sprite.fps;
 	  var increment = sprite.fps && (time - sprite.last_tick >= spf);
-	  var nextFrame = getFrame(sprite.frameset, sprite.frameindex + 1);
+	  var nextFrame = getTexture(sprite.frameset, sprite.frameindex + 1);
 
 	  if (increment) {
 	    if (nextFrame) sprite.frameindex++;
@@ -45949,22 +45962,22 @@ return /******/ (function(modules) { // webpackBootstrap
 	    sprite.last_tick = time;
 	  }
 
-	  var frame = getFrame(sprite.frameset, sprite.frameindex);
+	  var frame = getTexture(sprite.frameset, sprite.frameindex);
 	  return frame;
 	}
 
-	function getFrame(frameset, index) {
-	  return frames[frameset][index];
+	function getTexture(frameset, index) {
+	  return textures[frameset][index];
 	}
 
-	function parseFrames(frames) {
-	  return _.chain(frames).map(function (frame, i) {
+	function parseTextures(_frames, _textures) {
+	  return _.chain(_frames).map(function (frame, i) {
 	    frame.index = i;
 	    return frame;
 	  }).groupBy('name')
 	  .mapValues(function (set) {
 	    return _.map(set, function (frame) {
-	      return frame.index;
+	      return _textures[frame.index];
 	    });
 	  }).value();
 	}
@@ -46136,7 +46149,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var _ = __webpack_require__(2);
+	var _ = __webpack_require__(1);
 	var Entity = __webpack_require__(139);
 	var Terrain = __webpack_require__(148);
 	var Arable = __webpack_require__(149);
@@ -46865,7 +46878,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var Control = __webpack_require__(144);
 	var ActionPlant = __webpack_require__(158);
-	var _ = __webpack_require__(2);
+	var _ = __webpack_require__(1);
 
 	var actionMap = {
 	  'plant': ActionPlant.perform
@@ -46893,7 +46906,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var _ = __webpack_require__(2);
+	var _ = __webpack_require__(1);
 	var Plant = __webpack_require__(159);
 	var Position = __webpack_require__(141);
 	var GenomeSystem = __webpack_require__(161);
@@ -46931,7 +46944,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var _ = __webpack_require__(2);
+	var _ = __webpack_require__(1);
 	var Entity = __webpack_require__(139);
 	var Growth = __webpack_require__(154);
 	var Position = __webpack_require__(141);
@@ -47007,7 +47020,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var _ = __webpack_require__(2);
+	var _ = __webpack_require__(1);
 	var random = __webpack_require__(151);
 	var genomeLibrary = __webpack_require__(162);
 

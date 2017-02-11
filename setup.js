@@ -11,5 +11,7 @@ const herbData = {
 const herbs = new PlantTexture(herbCanvas, Canvas.ImageData);
 
 herbs.generateStems(herbData);
-fs.writeFileSync('assets/herbs.json', JSON.stringify(herbs, null, 2));
+const spritesheet = herbs.toJSON();
+spritesheet.meta.image = 'herbs.png';
+fs.writeFileSync('assets/herbs.json', JSON.stringify(spritesheet, null, 2));
 fs.writeFileSync('assets/herbs.png', herbCanvas.toBuffer());

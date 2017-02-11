@@ -9,13 +9,13 @@ var scale;
 var tileBase;
 var tileSize;
 var layers;
-var frames;
+var textures;
 var pixisprites;
 
-function setup(stage, spritesheet) {
+function setup(stage, tile, _frames, _textures) {
   scaleVal = 4;
   scale = {x: scaleVal, y: scaleVal};
-  tileBase = spritesheet.meta.tile;
+  tileBase = tile;
   tileSize = tileBase * scaleVal;
   layers = [ // 4 layers
     new PIXI.Container(), // 0: background
@@ -23,7 +23,8 @@ function setup(stage, spritesheet) {
     new PIXI.Container(), // 2: foreground (player)
     new PIXI.Container()  // 3: interface
   ];
-  frames = parseFrames(spritesheet.frames);
+
+  textures = parseTextures(_frames, _textures);
   pixisprites = [];
   _.each(layers, function (layer) { stage.addChild(layer); });
 }
@@ -46,8 +47,7 @@ function update(time) {
 
     if (!sprite.frameset) return;
 
-    var frame = updateFrame(sprite, time);
-    var texture = PIXI.Texture.fromFrame(frame);
+    var texture = updateTexture(sprite, time);
     var x = position.x;
     var y = position.y;
     var baselineY = pixisprite.texture ? y + 1 - pixisprite.texture.height / tileBase : y;
@@ -60,10 +60,10 @@ function update(time) {
   });
 }
 
-function updateFrame(sprite, time) {
+function updateTexture(sprite, time) {
   var spf = 1000 / sprite.fps;
   var increment = sprite.fps && (time - sprite.last_tick >= spf);
-  var nextFrame = getFrame(sprite.frameset, sprite.frameindex + 1);
+  var nextFrame = getTexture(sprite.frameset, sprite.frameindex + 1);
 
   if (increment) {
     if (nextFrame) sprite.frameindex++;
@@ -71,22 +71,22 @@ function updateFrame(sprite, time) {
     sprite.last_tick = time;
   }
 
-  var frame = getFrame(sprite.frameset, sprite.frameindex);
+  var frame = getTexture(sprite.frameset, sprite.frameindex);
   return frame;
 }
 
-function getFrame(frameset, index) {
-  return frames[frameset][index];
+function getTexture(frameset, index) {
+  return textures[frameset][index];
 }
 
-function parseFrames(frames) {
-  return _.chain(frames).map(function (frame, i) {
+function parseTextures(_frames, _textures) {
+  return _.chain(_frames).map(function (frame, i) {
     frame.index = i;
     return frame;
   }).groupBy('name')
   .mapValues(function (set) {
     return _.map(set, function (frame) {
-      return frame.index;
+      return _textures[frame.index];
     });
   }).value();
 }
