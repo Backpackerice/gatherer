@@ -46582,8 +46582,19 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if (stage !== newStage) growth.stage_ticks = 0;
 	    growth.energy = Math.min(growth.max_energy, growth.energy + newEnergy);
 	    growth.stage = newStage;
-	    sprite.frameset = GrowthStages[newStage].frameset;
+
+	    sprite.frameset = frameset(growth);
 	  });
+	}
+
+	function frameset({ stems, appearance_stem }) {
+	  var stemFrameset = 'growth-0_1';
+	  if (stems > 0) {
+	    var stemSize = Math.floor(Math.min(stems, 9)) - 1; // max 80
+	    stemSize = stemSize * 10 || 5;
+	    stemFrameset = `stem.${appearance_stem}.${stemSize}`;
+	  }
+	  return stemFrameset;
 	}
 
 	function energy(growth, arable) {
@@ -46641,7 +46652,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	  cost_stem:   3,
 	  cost_leaf:   5,
 	  cost_flower: 10,
-	  cost_seed:   8
+	  cost_seed:   8,
+
+	  // appearance
+	  appearance_stem: 0
 	});
 
 	module.exports = Growth;
@@ -46660,10 +46674,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	var RIPENING  = 5;
 	var RESTING   = 6;
 
-	function Stage(update, next, frameset) {
+	function Stage(update, next) {
 	  this.update = update;
 	  this.next = next;
-	  this.frameset = frameset || '';
 	}
 
 	var Dead = new Stage(function () { return DEAD; }, '');
@@ -46681,7 +46694,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  function (growth) {
 	    if (growth.roots > 4) return SPROUT;
 	    return SEED;
-	  }, 'growth-0_1');
+	  });
 
 	var Sprout = new Stage(
 	  function (growth) {
@@ -46711,7 +46724,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  function (growth) {
 	    if (growth.leaves > 5) return MATURE;
 	    return SPROUT;
-	  }, 'growth-1_1');
+	  });
 
 	var Mature = new Stage(
 	  function (growth) {
@@ -46741,7 +46754,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  function (growth) {
 	    if (growth.leaves + growth.roots + growth.stems > 20 && growth.ticks > 8) return FLOWERING;
 	    return MATURE;
-	  }, 'growth-2_1');
+	  });
 
 	var Flowering = new Stage(
 	  function (growth) {
@@ -46757,7 +46770,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if (growth.flowers > 3 && growth.ticks - growth.stage_ticks > 5)
 	      return RIPENING;
 	    return FLOWERING;
-	  }, 'growth-3_1');
+	  });
 
 	var Ripening = new Stage(
 	  function (growth) {
@@ -46776,7 +46789,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    growth.seeds += growth.cost_seed;
 	    if (Math.floor(growth.flowers) <= 0) return RESTING;
 	    return RIPENING;
-	  }, 'growth-4_1');
+	  });
 
 	var Resting = new Stage(
 	  function (growth) {
@@ -46784,7 +46797,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  },
 	  function () {
 	    return RESTING;
-	  }, 'growth-4_1');
+	  });
 
 	module.exports = [Dead, Seed, Sprout, Mature, Flowering, Ripening, Resting];
 
@@ -47151,9 +47164,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	  'staple': 1,
 	  'tuber': 1,
 
-	  'dicot': 2,
-	  'monocot': 2,
-
 	  'poison_leaf': 2,
 	  'poison_seed': 1,
 	  'poison_root': 1,
@@ -47176,7 +47186,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	    cost_stem: getCost('stem'),
 	    cost_leaf: getCost('leaf'),
 	    cost_flower: getCost('flower'),
-	    cost_seed: getCost('seed')
+	    cost_seed: getCost('seed'),
+
+	    appearance_stem: getAppearance('stem', 0, 3)
 	  }
 	};
 
@@ -47188,6 +47200,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	  };
 	}
 
+	function getAppearance(attr, min, max) {
+	  return function (base, expression) {
+	    var attrTrait = expression.traits[attr] || min;
+	    attrTrait = Math.min(attrTrait, max);
+	    attrTrait = Math.max(attrTrait, min);
+	    return attrTrait;
+	  };
+	}
 
 /***/ },
 /* 164 */

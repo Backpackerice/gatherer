@@ -40,8 +40,19 @@ function update(gametime) {
     if (stage !== newStage) growth.stage_ticks = 0;
     growth.energy = Math.min(growth.max_energy, growth.energy + newEnergy);
     growth.stage = newStage;
-    sprite.frameset = GrowthStages[newStage].frameset;
+
+    sprite.frameset = frameset(growth);
   });
+}
+
+function frameset({ stems, appearance_stem }) {
+  var stemFrameset = 'growth-0_1';
+  if (stems > 0) {
+    var stemSize = Math.floor(Math.min(stems, 9)) - 1; // max 80
+    stemSize = stemSize * 10 || 5;
+    stemFrameset = `stem.${appearance_stem}.${stemSize}`;
+  }
+  return stemFrameset;
 }
 
 function energy(growth, arable) {

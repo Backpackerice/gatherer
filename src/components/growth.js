@@ -33,7 +33,10 @@ var Growth = new Component('growth', {
   cost_stem:   3,
   cost_leaf:   5,
   cost_flower: 10,
-  cost_seed:   8
+  cost_seed:   8,
+
+  // appearance
+  appearance_stem: 0
 });
 
 module.exports = Growth;

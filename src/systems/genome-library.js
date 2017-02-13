@@ -17,9 +17,6 @@ var library = {
   'staple': 1,
   'tuber': 1,
 
-  'dicot': 2,
-  'monocot': 2,
-
   'poison_leaf': 2,
   'poison_seed': 1,
   'poison_root': 1,
