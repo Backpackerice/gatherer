@@ -62,21 +62,25 @@ function update(time) {
 
 function updateTexture(sprite, time) {
   var spf = 1000 / sprite.fps;
+  var textureset = getTextureSet(sprite.frameset);
   var increment = sprite.fps && (time - sprite.last_tick >= spf);
-  var nextFrame = getTexture(sprite.frameset, sprite.frameindex + 1);
+  var frameindex = Math.min(sprite.frameindex, textureset.length - 1);
+  var nextFrame;
 
   if (increment) {
-    if (nextFrame) sprite.frameindex++;
-    else sprite.frameindex = 0;
+    frameindex++;
+    nextFrame = textureset[frameindex];
+    if (!nextFrame) frameindex = 0;
     sprite.last_tick = time;
   }
 
-  var frame = getTexture(sprite.frameset, sprite.frameindex);
+  sprite.frameindex = frameindex;
+  var frame = textureset[sprite.frameindex];
   return frame;
 }
 
-function getTexture(frameset, index) {
-  return textures[frameset][index];
+function getTextureSet(frameset) {
+  return textures[frameset];
 }
 
 function parseTextures(_frames, _textures) {

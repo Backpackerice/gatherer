@@ -50,7 +50,7 @@ function frameset({ stems, appearance_stem }) {
   if (stems > 0) {
     var stemSize = Math.floor(Math.min(stems, 9)) - 1; // max 80
     stemSize = stemSize * 10 || 5;
-    stemFrameset = `stem.${appearance_stem}.${stemSize}`;
+    stemFrameset = `herbs.${appearance_stem}.${stemSize}`;
   }
   return stemFrameset;
 }
