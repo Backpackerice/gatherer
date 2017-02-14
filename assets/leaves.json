@@ -1,0 +1,59 @@
+{
+  "frames": [
+    {
+      "name": "leaf.0",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 5,
+        "h": 8
+      },
+      "markers": []
+    },
+    {
+      "name": "leaf.1",
+      "frame": {
+        "x": 5,
+        "y": 0,
+        "w": 5,
+        "h": 8
+      },
+      "markers": []
+    },
+    {
+      "name": "leaf.2",
+      "frame": {
+        "x": 10,
+        "y": 0,
+        "w": 5,
+        "h": 8
+      },
+      "markers": []
+    },
+    {
+      "name": "leaf.3",
+      "frame": {
+        "x": 15,
+        "y": 0,
+        "w": 5,
+        "h": 8
+      },
+      "markers": []
+    },
+    {
+      "name": "leaf.4",
+      "frame": {
+        "x": 20,
+        "y": 0,
+        "w": 5,
+        "h": 8
+      },
+      "markers": []
+    }
+  ],
+  "meta": {
+    "image": "leaves.png",
+    "tile_x": 5,
+    "tile_y": 8
+  }
+}
