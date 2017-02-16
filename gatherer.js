@@ -72,6 +72,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var ActionSystem = __webpack_require__(157);
 
 	var game;
+	var assets = ['assets/sprites.json', 'assets/herbs.json', 'assets/leaves.json'];
 	var registerComponent = function (name, component) {
 	  Gatherer[name] = component;
 	  game.registerUpdate(component.cleanup.bind(component));
@@ -82,18 +83,15 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	Gatherer.start = function () {
 	  game = new Game({
-	    assets: ['assets/sprites.json', 'assets/herbs.json'],
+	    assets,
 	    ready: function (game, loader, resources) {
-	      var assetResources = [
-	        resources['assets/sprites.json'],
-	        resources['assets/herbs.json']
-	      ];
+	      var assetResources = assets.map(asset => resources[asset]);
 	      var tile = assetResources[0].data.meta.tile;
 	      var frames = _.chain(assetResources)
-	        .map(function (r) { return r.data.frames; })
+	        .map(r => r.data.frames)
 	        .flatten().value();
 	      var textures = _.chain(assetResources)
-	        .map(function (r) { return _.map(r.textures); })
+	        .map(r => _.map(r.textures))
 	        .flatten().value();
 	      SpriteSystem.setup(game.stage, tile, frames, textures);
 	      LightingSystem.setup(game.stage);
