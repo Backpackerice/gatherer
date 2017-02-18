@@ -45936,20 +45936,15 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    if (!sprite.frameset) return;
 
-	    var texture = updateTexture(sprite, time);
-	    var x = position.x;
-	    var y = position.y;
-	    var baselineY = pixisprite.texture ? y + 1 - pixisprite.texture.height / tileBase : y;
-	    var modifiedX = toPosition(x);
-	    var modifiedY = pixisprite ? toPosition(baselineY) : toPosition(y);
+	    updateSprite(sprite, time);
+	    updatePixiSprite(pixisprite, sprite, position);
+
 	    var layer = getLayer(sprite.layer);
 	    layer.addChild(pixisprite);
-	    pixisprite.position.set(modifiedX, modifiedY);
-	    pixisprite.texture = texture;
 	  });
 	}
 
-	function updateTexture(sprite, time) {
+	function updateSprite(sprite, time) {
 	  var spf = 1000 / sprite.fps;
 	  var textureset = getTextureSet(sprite.frameset);
 	  var increment = sprite.fps && (time - sprite.last_tick >= spf);
@@ -45964,8 +45959,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 
 	  sprite.frameindex = frameindex;
-	  var frame = textureset[sprite.frameindex];
-	  return frame;
+	  return sprite;
+	}
+
+	function updatePixiSprite(pixisprite, sprite, position) {
+	  var basesprite = getPixiBaseSprite(pixisprite);
+	  var texture = getTextureSet(sprite.frameset)[sprite.frameindex];
+	  var { x, y } = getPixiPosition(pixisprite, position.x, position.y);
+	  basesprite.texture = texture;
+	  pixisprite.x = x;
+	  pixisprite.y = y;
+
+	  return pixisprite;
 	}
 
 	function getTextureSet(frameset) {
@@ -45986,10 +45991,24 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	function getPixi(i) {
 	  if (!pixisprites[i]) {
-	    pixisprites[i] = new PIXI.Sprite(PIXI.Texture.fromFrame(0));
-	    pixisprites[i].scale = scale;
+	    var sprite = new PIXI.Sprite(PIXI.Texture.fromFrame(0));
+	    sprite.scale = scale;
+	    pixisprites[i] = new PIXI.Container();
+	    pixisprites[i].addChildAt(sprite, 0);
 	  }
 	  return pixisprites[i];
+	}
+
+	function getPixiBaseSprite(pixisprite) {
+	  return pixisprite.getChildAt(0);
+	}
+
+	function getPixiPosition(pixisprite, x, y) {
+	  var tileScale = tileBase * scaleVal;
+	  var baselineY = pixisprite ? y + 1 - pixisprite.height / tileScale : y;
+	  var modifiedX = toPosition(x);
+	  var modifiedY = pixisprite ? toPosition(baselineY) : toPosition(y);
+	  return { x: modifiedX, y: modifiedY };
 	}
 
 	function toPosition(x) {
@@ -46586,10 +46605,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	    growth.stage = newStage;
 
 	    sprite.frameset = frameset(growth);
+	    sprite.subsprites = subsprites(growth);
 	  });
 	}
 
-	function frameset({ stems, appearance_stem }) {
+	function frameset(growth) {
+	  var { stems, appearance_stem } = growth;
 	  var stemFrameset = 'growth-0_1';
 	  if (stems > 0) {
 	    var stemSize = Math.floor(Math.min(stems, 9)) - 1; // max 80
@@ -46597,6 +46618,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	    stemFrameset = `herbs.${appearance_stem}.${stemSize}`;
 	  }
 	  return stemFrameset;
+	}
+
+	function subsprites() {
+	  var subsprite = Sprite.Subsprite({
+	    frameset: 'leaf.0',
+	    x: 0,
+	    y: 0
+	  });
+	  return [subsprite];
 	}
 
 	function energy(growth, arable) {

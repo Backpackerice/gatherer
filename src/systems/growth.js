@@ -42,10 +42,12 @@ function update(gametime) {
     growth.stage = newStage;
 
     sprite.frameset = frameset(growth);
+    sprite.subsprites = subsprites(growth);
   });
 }
 
-function frameset({ stems, appearance_stem }) {
+function frameset(growth) {
+  var { stems, appearance_stem } = growth;
   var stemFrameset = 'growth-0_1';
   if (stems > 0) {
     var stemSize = Math.floor(Math.min(stems, 9)) - 1; // max 80
@@ -53,6 +55,15 @@ function frameset({ stems, appearance_stem }) {
     stemFrameset = `herbs.${appearance_stem}.${stemSize}`;
   }
   return stemFrameset;
+}
+
+function subsprites() {
+  var subsprite = Sprite.Subsprite({
+    frameset: 'leaf.0',
+    x: 0,
+    y: 0
+  });
+  return [subsprite];
 }
 
 function energy(growth, arable) {
