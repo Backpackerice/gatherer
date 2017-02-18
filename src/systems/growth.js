@@ -61,7 +61,8 @@ function subsprites() {
   var subsprite = Sprite.Subsprite({
     frameset: 'leaf.0',
     x: 0,
-    y: 0
+    y: 0,
+    scale: 0.5
   });
   return [subsprite];
 }

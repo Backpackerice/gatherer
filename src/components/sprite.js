@@ -10,11 +10,12 @@ var Sprite = new Component('sprite', {
   last_tick: null
 });
 
-Sprite.Subsprite = function (frameset, x, y) {
+Sprite.Subsprite = function ({ frameset, x, y, scale = 1 }) {
   return {
-    frameset: frameset,
-    x: x,
-    y: y
+    frameset,
+    x,
+    y,
+    scale
   };
 };
 

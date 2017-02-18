@@ -45819,11 +45819,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	  last_tick: null
 	});
 
-	Sprite.Subsprite = function (frameset, x, y) {
+	Sprite.Subsprite = function ({ frameset, x, y, scale = 1 }) {
 	  return {
-	    frameset: frameset,
-	    x: x,
-	    y: y
+	    frameset,
+	    x,
+	    y,
+	    scale
 	  };
 	};
 
@@ -45893,19 +45894,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	var PIXI = __webpack_require__(4);
 	var _ = __webpack_require__(1);
 
-	var scaleVal;
 	var scale;
 	var tileBase;
 	var tileSize;
 	var layers;
 	var textures;
-	var pixisprites;
+	var pixis;
 
 	function setup(stage, tile, _frames, _textures) {
-	  scaleVal = 4;
-	  scale = {x: scaleVal, y: scaleVal};
+	  scale = 4;
 	  tileBase = tile;
-	  tileSize = tileBase * scaleVal;
+	  tileSize = tileBase * scale;
 	  layers = [ // 4 layers
 	    new PIXI.Container(), // 0: background
 	    new PIXI.Container(), // 1: foreground
@@ -45914,7 +45913,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  ];
 
 	  textures = parseTextures(_frames, _textures);
-	  pixisprites = [];
+	  pixis = [];
 	  _.each(layers, function (layer) { stage.addChild(layer); });
 	}
 
@@ -45924,23 +45923,23 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var position = Position.get(entity.id);
 
 	    // TODO: deal with subsprites
-	    var pixisprite = getPixi(i);
+	    var container = getPixi(i);
 	    if (entity.destroyed) {
-	      pixisprite.parent.removeChild(pixisprite);
+	      container.parent.removeChild(container);
 	      return;
 	    }
 
-	    if (pixisprite.parent) {
-	      pixisprite.parent.removeChild(pixisprite);
+	    if (container.parent) {
+	      container.parent.removeChild(container);
 	    }
 
 	    if (!sprite.frameset) return;
 
 	    updateSprite(sprite, time);
-	    updatePixiSprite(pixisprite, sprite, position);
+	    updatePixiContainer(container, sprite, position);
 
 	    var layer = getLayer(sprite.layer);
-	    layer.addChild(pixisprite);
+	    layer.addChild(container);
 	  });
 	}
 
@@ -45962,15 +45961,39 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return sprite;
 	}
 
-	function updatePixiSprite(pixisprite, sprite, position) {
-	  var basesprite = getPixiBaseSprite(pixisprite);
-	  var texture = getTextureSet(sprite.frameset)[sprite.frameindex];
-	  var { x, y } = getPixiPosition(pixisprite, position.x, position.y);
-	  basesprite.texture = texture;
-	  pixisprite.x = x;
-	  pixisprite.y = y;
+	function updatePixiContainer(container, sprite, position) {
+	  var basesprite = getPixiSprite(container, 0);
+	  var basetexture = getTextureSet(sprite.frameset)[sprite.frameindex];
+	  var { x, y } = getPixiPosition(container, position.x, position.y);
 
-	  return pixisprite;
+	  basesprite.texture = basetexture;
+	  container.x = x;
+	  container.y = y;
+
+	  var numPixisubs = container.children.length - 1; // offset the base sprite
+	  var numSubs = sprite.subsprites.length;
+	  var numRemove = numPixisubs - numSubs;
+
+	  if (numRemove > 0) {
+	    container.removeChildren(container.children.length - numRemove);
+	  }
+
+	  sprite.subsprites.forEach(function (subsprite, index) {
+	    var pixisprite;
+	    var pixispriteIndex = index + 1; // offset the base sprite
+	    var subscale = subsprite.scale * scale;
+	    if (index < numPixisubs) {
+	      pixisprite = getPixiSprite(container, pixispriteIndex);
+	    } else {
+	      pixisprite = makePixiSprite();
+	      container.addChildAt(pixisprite, pixispriteIndex);
+	    }
+	    pixisprite.texture = getTextureSet(subsprite.frameset)[0];
+	    pixisprite.scale.set(subscale, subscale);
+	    pixisprite.position.set(subsprite.x, subsprite.y);
+	  });
+
+	  return container;
 	}
 
 	function getTextureSet(frameset) {
@@ -45990,24 +46013,29 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 	function getPixi(i) {
-	  if (!pixisprites[i]) {
-	    var sprite = new PIXI.Sprite(PIXI.Texture.fromFrame(0));
-	    sprite.scale = scale;
-	    pixisprites[i] = new PIXI.Container();
-	    pixisprites[i].addChildAt(sprite, 0);
+	  if (!pixis[i]) {
+	    var pixisprite = makePixiSprite();
+	    var container = new PIXI.Container();
+	    pixisprite.scale.set(scale, scale);
+	    container.addChildAt(pixisprite, 0);
+	    pixis[i] = container;
 	  }
-	  return pixisprites[i];
+	  return pixis[i];
 	}
 
-	function getPixiBaseSprite(pixisprite) {
-	  return pixisprite.getChildAt(0);
+	function makePixiSprite() {
+	  return new PIXI.Sprite(PIXI.Texture.fromFrame(0));
 	}
 
-	function getPixiPosition(pixisprite, x, y) {
-	  var tileScale = tileBase * scaleVal;
-	  var baselineY = pixisprite ? y + 1 - pixisprite.height / tileScale : y;
+	function getPixiSprite(container, index) {
+	  return container.getChildAt(index);
+	}
+
+	function getPixiPosition(container, x, y) {
+	  var tileScale = tileBase * scale;
+	  var baselineY = container ? y + 1 - container.height / tileScale : y;
 	  var modifiedX = toPosition(x);
-	  var modifiedY = pixisprite ? toPosition(baselineY) : toPosition(y);
+	  var modifiedY = container ? toPosition(baselineY) : toPosition(y);
 	  return { x: modifiedX, y: modifiedY };
 	}
 
@@ -46624,7 +46652,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var subsprite = Sprite.Subsprite({
 	    frameset: 'leaf.0',
 	    x: 0,
-	    y: 0
+	    y: 0,
+	    scale: 0.5
 	  });
 	  return [subsprite];
 	}
