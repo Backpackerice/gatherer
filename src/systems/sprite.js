@@ -4,17 +4,11 @@ var Position = require('../components/position.js');
 var PIXI = require('pixi.js');
 var _ = require('lodash');
 
-var scale;
-var tileBase;
-var tileSize;
 var layers;
-var textures;
 var pixis;
+var resources;
 
-function setup(stage, tile, _frames, _textures) {
-  scale = 4;
-  tileBase = tile;
-  tileSize = tileBase * scale;
+function setup(stage, _resources) {
   layers = [ // 4 layers
     new PIXI.Container(), // 0: background
     new PIXI.Container(), // 1: foreground
@@ -22,7 +16,7 @@ function setup(stage, tile, _frames, _textures) {
     new PIXI.Container()  // 3: interface
   ];
 
-  textures = parseTextures(_frames, _textures);
+  resources = _resources;
   pixis = [];
   _.each(layers, function (layer) { stage.addChild(layer); });
 }
@@ -91,7 +85,7 @@ function updatePixiContainer(container, sprite, position) {
   sprite.subsprites.forEach(function (subsprite, index) {
     var pixisprite;
     var pixispriteIndex = index + 1; // offset the base sprite
-    var subscale = subsprite.scale * scale;
+    var subscale = subsprite.scale * resources.scale;
     if (index < numPixisubs) {
       pixisprite = getPixiSprite(container, pixispriteIndex);
     } else {
@@ -107,22 +101,11 @@ function updatePixiContainer(container, sprite, position) {
 }
 
 function getTextureSet(frameset) {
-  return textures[frameset];
-}
-
-function parseTextures(_frames, _textures) {
-  return _.chain(_frames).map(function (frame, i) {
-    frame.index = i;
-    return frame;
-  }).groupBy('name')
-  .mapValues(function (set) {
-    return _.map(set, function (frame) {
-      return _textures[frame.index];
-    });
-  }).value();
+  return resources.textures[frameset];
 }
 
 function getPixi(i) {
+  var scale = resources.scale;
   if (!pixis[i]) {
     var pixisprite = makePixiSprite();
     var container = new PIXI.Container();
@@ -142,7 +125,7 @@ function getPixiSprite(container, index) {
 }
 
 function getPixiPosition(container, x, y) {
-  var tileScale = tileBase * scale;
+  var tileScale = resources.tile * resources.scale;
   var baselineY = container ? y + 1 - container.height / tileScale : y;
   var modifiedX = toPosition(x);
   var modifiedY = container ? toPosition(baselineY) : toPosition(y);
@@ -150,7 +133,7 @@ function getPixiPosition(container, x, y) {
 }
 
 function toPosition(x) {
-  return x * tileSize;
+  return x * resources.tile * resources.scale;
 }
 
 function getLayer(layer) {

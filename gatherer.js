@@ -70,6 +70,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var GrowthSystem = __webpack_require__(153);
 	var MovementSystem = __webpack_require__(156);
 	var ActionSystem = __webpack_require__(157);
+	var ResourceSystem = __webpack_require__(165);
 
 	var game;
 	var assets = ['assets/sprites.json', 'assets/herbs.json', 'assets/leaves.json'];
@@ -79,21 +80,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 	// Development Testing
-	Gatherer.time = __webpack_require__(165);
+	Gatherer.time = __webpack_require__(166);
 
 	Gatherer.start = function () {
 	  game = new Game({
 	    assets,
-	    ready: function (game, loader, resources) {
-	      var assetResources = assets.map(asset => resources[asset]);
-	      var tile = assetResources[0].data.meta.tile;
-	      var frames = _.chain(assetResources)
-	        .map(r => r.data.frames)
-	        .flatten().value();
-	      var textures = _.chain(assetResources)
-	        .map(r => _.map(r.textures))
-	        .flatten().value();
-	      SpriteSystem.setup(game.stage, tile, frames, textures);
+	    ready: function (game, loader, rawResources) {
+	      var resources = ResourceSystem.setup(assets, rawResources);
+	      SpriteSystem.setup(game.stage, resources);
 	      LightingSystem.setup(game.stage);
 	      ControlSystem.setup(document.body);
 	      TerrainSystem.generate(12, 12);
@@ -45894,17 +45888,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	var PIXI = __webpack_require__(4);
 	var _ = __webpack_require__(1);
 
-	var scale;
-	var tileBase;
-	var tileSize;
 	var layers;
-	var textures;
 	var pixis;
+	var resources;
 
-	function setup(stage, tile, _frames, _textures) {
-	  scale = 4;
-	  tileBase = tile;
-	  tileSize = tileBase * scale;
+	function setup(stage, _resources) {
 	  layers = [ // 4 layers
 	    new PIXI.Container(), // 0: background
 	    new PIXI.Container(), // 1: foreground
@@ -45912,7 +45900,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    new PIXI.Container()  // 3: interface
 	  ];
 
-	  textures = parseTextures(_frames, _textures);
+	  resources = _resources;
 	  pixis = [];
 	  _.each(layers, function (layer) { stage.addChild(layer); });
 	}
@@ -45981,7 +45969,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  sprite.subsprites.forEach(function (subsprite, index) {
 	    var pixisprite;
 	    var pixispriteIndex = index + 1; // offset the base sprite
-	    var subscale = subsprite.scale * scale;
+	    var subscale = subsprite.scale * resources.scale;
 	    if (index < numPixisubs) {
 	      pixisprite = getPixiSprite(container, pixispriteIndex);
 	    } else {
@@ -45997,22 +45985,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 	function getTextureSet(frameset) {
-	  return textures[frameset];
-	}
-
-	function parseTextures(_frames, _textures) {
-	  return _.chain(_frames).map(function (frame, i) {
-	    frame.index = i;
-	    return frame;
-	  }).groupBy('name')
-	  .mapValues(function (set) {
-	    return _.map(set, function (frame) {
-	      return _textures[frame.index];
-	    });
-	  }).value();
+	  return resources.textures[frameset];
 	}
 
 	function getPixi(i) {
+	  var scale = resources.scale;
 	  if (!pixis[i]) {
 	    var pixisprite = makePixiSprite();
 	    var container = new PIXI.Container();
@@ -46032,7 +46009,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 	function getPixiPosition(container, x, y) {
-	  var tileScale = tileBase * scale;
+	  var tileScale = resources.tile * resources.scale;
 	  var baselineY = container ? y + 1 - container.height / tileScale : y;
 	  var modifiedX = toPosition(x);
 	  var modifiedY = container ? toPosition(baselineY) : toPosition(y);
@@ -46040,7 +46017,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 	function toPosition(x) {
-	  return x * tileSize;
+	  return x * resources.tile * resources.scale;
 	}
 
 	function getLayer(layer) {
@@ -47311,6 +47288,63 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 165 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var _ = __webpack_require__(1);
+
+	var resources;
+
+	function get() {
+	  return resources;
+	}
+
+	function setup(assets, raw) {
+	  function parseFrames(_frames) {
+	    return _.chain(_frames).map(function (frame, i) {
+	        frame.index = i;
+	        return frame;
+	      }).groupBy('name').value();
+	  }
+
+	  function parseTextures(_frames, _textures) {
+	    return _.chain(parseFrames(_frames))
+	      .mapValues(function (set) {
+	        return _.map(set, function (frame) {
+	          return _textures[frame.index];
+	        });
+	      }).value();
+	  }
+
+	  var assetResources = assets.map(asset => raw[asset]);
+	  var tile = assetResources[0].data.meta.tile;
+	  var _frames = _.chain(assetResources)
+	    .map(r => r.data.frames)
+	    .flatten().value();
+	  var _textures = _.chain(assetResources)
+	    .map(r => _.map(r.textures))
+	    .flatten().value();
+
+	  var textures = parseTextures(_frames, _textures);
+	  var frames = parseFrames(_frames);
+
+	  resources = {
+	    scale: 4,
+	    tile,
+	    textures,
+	    frames,
+	    raw
+	  };
+	  return get();
+	}
+
+	module.exports = {
+	  get,
+	  setup
+	};
+
+
+/***/ },
+/* 166 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var GameTime = __webpack_require__(137);

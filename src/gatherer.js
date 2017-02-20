@@ -14,6 +14,7 @@ var TerrainSystem = require('./systems/terrain.js');
 var GrowthSystem = require('./systems/growth.js');
 var MovementSystem = require('./systems/movement.js');
 var ActionSystem = require('./systems/action.js');
+var ResourceSystem = require('./systems/resources.js');
 
 var game;
 var assets = ['assets/sprites.json', 'assets/herbs.json', 'assets/leaves.json'];
@@ -28,16 +29,9 @@ Gatherer.time = require('./helpers/timecycle.js');
 Gatherer.start = function () {
   game = new Game({
     assets,
-    ready: function (game, loader, resources) {
-      var assetResources = assets.map(asset => resources[asset]);
-      var tile = assetResources[0].data.meta.tile;
-      var frames = _.chain(assetResources)
-        .map(r => r.data.frames)
-        .flatten().value();
-      var textures = _.chain(assetResources)
-        .map(r => _.map(r.textures))
-        .flatten().value();
-      SpriteSystem.setup(game.stage, tile, frames, textures);
+    ready: function (game, loader, rawResources) {
+      var resources = ResourceSystem.setup(assets, rawResources);
+      SpriteSystem.setup(game.stage, resources);
       LightingSystem.setup(game.stage);
       ControlSystem.setup(document.body);
       TerrainSystem.generate(12, 12);
