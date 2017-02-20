@@ -36,7 +36,8 @@ var Growth = new Component('growth', {
   cost_seed:   8,
 
   // appearance
-  appearance_stem: 0
+  appearance_stem: 0,
+  appearance_leaf: 0
 });
 
 module.exports = Growth;

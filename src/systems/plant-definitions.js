@@ -6,7 +6,8 @@ module.exports = {
     cost_flower: getCost('flower'),
     cost_seed: getCost('seed'),
 
-    appearance_stem: getAppearance('stem', 0, 3)
+    appearance_stem: getAppearance('stem', 0, 3),
+    appearance_leaf: getAppearance('leaf', 0, 4)
   }
 };
 

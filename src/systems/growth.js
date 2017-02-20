@@ -6,6 +6,11 @@ var Arable = require('../components/arable.js');
 var TerrainSystem = require('../systems/terrain.js');
 
 var GrowthStages = require('./growth-stages.js');
+var resources;
+
+function setup(_resources) {
+  resources = _resources;
+}
 
 function update(gametime) {
   var DAY = 60*24;
@@ -42,7 +47,7 @@ function update(gametime) {
     growth.stage = newStage;
 
     sprite.frameset = frameset(growth);
-    sprite.subsprites = subsprites(growth);
+    sprite.subsprites = subsprites(growth, sprite.frameset);
   });
 }
 
@@ -57,14 +62,20 @@ function frameset(growth) {
   return stemFrameset;
 }
 
-function subsprites() {
-  var subsprite = Sprite.Subsprite({
-    frameset: 'leaf.0',
-    x: 0,
-    y: 0,
-    scale: 0.5
-  });
-  return [subsprite];
+function subsprites(growth, stemFrame) {
+  var subsprites = [];
+  var { leaves, appearance_leaf } = growth;
+  var stemMarkers = resources.frames[stemFrame][0].markers;
+  var numLeaves = Math.min(stemMarkers.length, leaves);
+  for (var i = 0; i < numLeaves; i++) {
+    subsprites.push(Sprite.Subsprite({
+      frameset: `leaf.${appearance_leaf}`,
+      x: stemMarkers[i][0],
+      y: stemMarkers[i][1],
+      scale: 0.5
+    }));
+  }
+  return subsprites;
 }
 
 function energy(growth, arable) {
@@ -79,5 +90,6 @@ function energy(growth, arable) {
 }
 
 module.exports = {
-  update: update
+  setup,
+  update
 };

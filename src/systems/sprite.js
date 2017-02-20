@@ -68,7 +68,8 @@ function updateSprite(sprite, time) {
 function updatePixiContainer(container, sprite, position) {
   var basesprite = getPixiSprite(container, 0);
   var basetexture = getTextureSet(sprite.frameset)[sprite.frameindex];
-  var { x, y } = getPixiPosition(container, position.x, position.y);
+  var basescale = resources.tile * resources.scale;
+  var { x, y } = getPixiPosition(container, basescale, position.x, position.y);
 
   basesprite.texture = basetexture;
   container.x = x;
@@ -85,16 +86,17 @@ function updatePixiContainer(container, sprite, position) {
   sprite.subsprites.forEach(function (subsprite, index) {
     var pixisprite;
     var pixispriteIndex = index + 1; // offset the base sprite
-    var subscale = subsprite.scale * resources.scale;
+    var subscale = resources.scale * subsprite.scale;
     if (index < numPixisubs) {
       pixisprite = getPixiSprite(container, pixispriteIndex);
     } else {
       pixisprite = makePixiSprite();
       container.addChildAt(pixisprite, pixispriteIndex);
     }
+    var subposition = getPixiPosition(pixisprite, resources.scale, subsprite.x, subsprite.y);
     pixisprite.texture = getTextureSet(subsprite.frameset)[0];
     pixisprite.scale.set(subscale, subscale);
-    pixisprite.position.set(subsprite.x, subsprite.y);
+    pixisprite.position.set(subposition.x, subposition.y);
   });
 
   return container;
@@ -124,16 +126,11 @@ function getPixiSprite(container, index) {
   return container.getChildAt(index);
 }
 
-function getPixiPosition(container, x, y) {
-  var tileScale = resources.tile * resources.scale;
+function getPixiPosition(container, tileScale, x, y) {
   var baselineY = container ? y + 1 - container.height / tileScale : y;
-  var modifiedX = toPosition(x);
-  var modifiedY = container ? toPosition(baselineY) : toPosition(y);
+  var modifiedX = x * tileScale;
+  var modifiedY = container ? baselineY * tileScale : y * tileScale;
   return { x: modifiedX, y: modifiedY };
-}
-
-function toPosition(x) {
-  return x * resources.tile * resources.scale;
 }
 
 function getLayer(layer) {

@@ -34,6 +34,8 @@ Gatherer.start = function () {
       SpriteSystem.setup(game.stage, resources);
       LightingSystem.setup(game.stage);
       ControlSystem.setup(document.body);
+
+      GrowthSystem.setup(resources);
       TerrainSystem.generate(12, 12);
 
       var character = new Character(0, 0);

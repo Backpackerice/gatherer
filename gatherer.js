@@ -90,6 +90,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	      SpriteSystem.setup(game.stage, resources);
 	      LightingSystem.setup(game.stage);
 	      ControlSystem.setup(document.body);
+
+	      GrowthSystem.setup(resources);
 	      TerrainSystem.generate(12, 12);
 
 	      var character = new Character(0, 0);
@@ -45952,7 +45954,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	function updatePixiContainer(container, sprite, position) {
 	  var basesprite = getPixiSprite(container, 0);
 	  var basetexture = getTextureSet(sprite.frameset)[sprite.frameindex];
-	  var { x, y } = getPixiPosition(container, position.x, position.y);
+	  var basescale = resources.tile * resources.scale;
+	  var { x, y } = getPixiPosition(container, basescale, position.x, position.y);
 
 	  basesprite.texture = basetexture;
 	  container.x = x;
@@ -45969,16 +45972,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	  sprite.subsprites.forEach(function (subsprite, index) {
 	    var pixisprite;
 	    var pixispriteIndex = index + 1; // offset the base sprite
-	    var subscale = subsprite.scale * resources.scale;
+	    var subscale = resources.scale * subsprite.scale;
 	    if (index < numPixisubs) {
 	      pixisprite = getPixiSprite(container, pixispriteIndex);
 	    } else {
 	      pixisprite = makePixiSprite();
 	      container.addChildAt(pixisprite, pixispriteIndex);
 	    }
+	    var subposition = getPixiPosition(pixisprite, resources.scale, subsprite.x, subsprite.y);
 	    pixisprite.texture = getTextureSet(subsprite.frameset)[0];
 	    pixisprite.scale.set(subscale, subscale);
-	    pixisprite.position.set(subsprite.x, subsprite.y);
+	    pixisprite.position.set(subposition.x, subposition.y);
 	  });
 
 	  return container;
@@ -46008,16 +46012,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return container.getChildAt(index);
 	}
 
-	function getPixiPosition(container, x, y) {
-	  var tileScale = resources.tile * resources.scale;
+	function getPixiPosition(container, tileScale, x, y) {
 	  var baselineY = container ? y + 1 - container.height / tileScale : y;
-	  var modifiedX = toPosition(x);
-	  var modifiedY = container ? toPosition(baselineY) : toPosition(y);
+	  var modifiedX = x * tileScale;
+	  var modifiedY = container ? baselineY * tileScale : y * tileScale;
 	  return { x: modifiedX, y: modifiedY };
-	}
-
-	function toPosition(x) {
-	  return x * resources.tile * resources.scale;
 	}
 
 	function getLayer(layer) {
@@ -46574,6 +46573,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	var TerrainSystem = __webpack_require__(147);
 
 	var GrowthStages = __webpack_require__(155);
+	var resources;
+
+	function setup(_resources) {
+	  resources = _resources;
+	}
 
 	function update(gametime) {
 	  var DAY = 60*24;
@@ -46610,7 +46614,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    growth.stage = newStage;
 
 	    sprite.frameset = frameset(growth);
-	    sprite.subsprites = subsprites(growth);
+	    sprite.subsprites = subsprites(growth, sprite.frameset);
 	  });
 	}
 
@@ -46625,14 +46629,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return stemFrameset;
 	}
 
-	function subsprites() {
-	  var subsprite = Sprite.Subsprite({
-	    frameset: 'leaf.0',
-	    x: 0,
-	    y: 0,
-	    scale: 0.5
-	  });
-	  return [subsprite];
+	function subsprites(growth, stemFrame) {
+	  var subsprites = [];
+	  var { leaves, appearance_leaf } = growth;
+	  var stemMarkers = resources.frames[stemFrame][0].markers;
+	  var numLeaves = Math.min(stemMarkers.length, leaves);
+	  for (var i = 0; i < numLeaves; i++) {
+	    subsprites.push(Sprite.Subsprite({
+	      frameset: `leaf.${appearance_leaf}`,
+	      x: stemMarkers[i][0],
+	      y: stemMarkers[i][1],
+	      scale: 0.5
+	    }));
+	  }
+	  return subsprites;
 	}
 
 	function energy(growth, arable) {
@@ -46647,7 +46657,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 	module.exports = {
-	  update: update
+	  setup,
+	  update
 	};
 
 
@@ -46693,7 +46704,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  cost_seed:   8,
 
 	  // appearance
-	  appearance_stem: 0
+	  appearance_stem: 0,
+	  appearance_leaf: 0
 	});
 
 	module.exports = Growth;
@@ -47226,7 +47238,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    cost_flower: getCost('flower'),
 	    cost_seed: getCost('seed'),
 
-	    appearance_stem: getAppearance('stem', 0, 3)
+	    appearance_stem: getAppearance('stem', 0, 3),
+	    appearance_leaf: getAppearance('leaf', 0, 4)
 	  }
 	};
 
