@@ -7,7 +7,7 @@ var GrowthSystem = require('../src/systems/growth.js');
 var TerrainSystem = require('../src/systems/terrain.js');
 var GameTime = require('../src/base/time.js');
 
-describe('growth system', function () {
+xdescribe('growth system', function () {
   var gametime = new GameTime(0, Date.now());
   var generator = GenomeSystem.generator();
 
