@@ -1,14 +1,15 @@
 
 var Sprite = require('../components/sprite.js');
 var Position = require('../components/position.js');
+var Resources = require('../systems/resources.js');
+
 var PIXI = require('pixi.js');
 var _ = require('lodash');
 
 var layers;
 var pixis;
-var resources;
 
-function setup(stage, _resources) {
+function setup(stage) {
   layers = [ // 4 layers
     new PIXI.Container(), // 0: background
     new PIXI.Container(), // 1: foreground
@@ -16,7 +17,6 @@ function setup(stage, _resources) {
     new PIXI.Container()  // 3: interface
   ];
 
-  resources = _resources;
   pixis = [];
   _.each(layers, function (layer) { stage.addChild(layer); });
 }
@@ -49,7 +49,7 @@ function update(time) {
 
 function updateSprite(sprite, time) {
   var spf = 1000 / sprite.fps;
-  var textureset = getTextureSet(sprite.frameset);
+  var textureset = Resources.getTextureSet(sprite.frameset);
   var increment = sprite.fps && (time - sprite.last_tick >= spf);
   var frameindex = Math.min(sprite.frameindex, textureset.length - 1);
   var nextFrame;
@@ -66,8 +66,9 @@ function updateSprite(sprite, time) {
 }
 
 function updatePixiContainer(container, sprite, position) {
+  var resources = Resources.get();
   var basesprite = getPixiSprite(container, 0);
-  var basetexture = getTextureSet(sprite.frameset)[sprite.frameindex];
+  var basetexture = Resources.getTextureSet(sprite.frameset)[sprite.frameindex];
   var basescale = resources.tile * resources.scale;
   var { x, y } = getPixiPosition(container, basescale, position.x, position.y);
 
@@ -94,7 +95,7 @@ function updatePixiContainer(container, sprite, position) {
       container.addChildAt(pixisprite, pixispriteIndex);
     }
     var subposition = getPixiPosition(pixisprite, resources.scale, subsprite.x, subsprite.y);
-    pixisprite.texture = getTextureSet(subsprite.frameset)[0];
+    pixisprite.texture = Resources.getTextureSet(subsprite.frameset)[0];
     pixisprite.scale.set(subscale, subscale);
     pixisprite.position.set(subposition.x, subposition.y);
   });
@@ -102,11 +103,8 @@ function updatePixiContainer(container, sprite, position) {
   return container;
 }
 
-function getTextureSet(frameset) {
-  return resources.textures[frameset];
-}
-
 function getPixi(i) {
+  var resources = Resources.get();
   var scale = resources.scale;
   if (!pixis[i]) {
     var pixisprite = makePixiSprite();

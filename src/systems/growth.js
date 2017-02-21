@@ -4,13 +4,9 @@ var Position = require('../components/position.js');
 var Sprite = require('../components/sprite.js');
 var Arable = require('../components/arable.js');
 var TerrainSystem = require('../systems/terrain.js');
+var Resources = require('../systems/resources.js');
 
 var GrowthStages = require('./growth-stages.js');
-var resources;
-
-function setup(_resources) {
-  resources = _resources;
-}
 
 function update(gametime) {
   var DAY = 60*24;
@@ -53,23 +49,22 @@ function update(gametime) {
 
 function frameset(growth) {
   var { stems, appearance_stem } = growth;
-  var stemFrameset = 'growth-0_1';
+  var stemSize = stems;
   if (stems > 0) {
-    var stemSize = Math.floor(Math.min(stems, 9)) - 1; // max 80
+    stemSize = Math.floor(Math.min(stems, 9)) - 1; // max 80
     stemSize = stemSize * 10 || 5;
-    stemFrameset = `herbs.${appearance_stem}.${stemSize}`;
   }
-  return stemFrameset;
+  return Resources.getStemFrameSetKey('herbs', appearance_stem, stemSize);
 }
 
 function subsprites(growth, stemFrame) {
   var subsprites = [];
   var { leaves, appearance_leaf } = growth;
-  var stemMarkers = resources.frames[stemFrame][0].markers;
+  var stemMarkers = Resources.getFrameSet(stemFrame)[0].markers;
   var numLeaves = Math.min(stemMarkers.length, leaves);
   for (var i = 0; i < numLeaves; i++) {
     subsprites.push(Sprite.Subsprite({
-      frameset: `leaf.${appearance_leaf}`,
+      frameset: Resources.getLeafFrameSetKey(appearance_leaf),
       x: stemMarkers[i][0],
       y: stemMarkers[i][1],
       scale: 0.5
@@ -90,6 +85,5 @@ function energy(growth, arable) {
 }
 
 module.exports = {
-  setup,
   update
 };

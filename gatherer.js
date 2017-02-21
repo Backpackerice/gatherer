@@ -65,12 +65,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	// Systems
 	var ControlSystem = __webpack_require__(144);
 	var SpriteSystem = __webpack_require__(145);
-	var LightingSystem = __webpack_require__(146);
-	var TerrainSystem = __webpack_require__(147);
-	var GrowthSystem = __webpack_require__(153);
-	var MovementSystem = __webpack_require__(156);
-	var ActionSystem = __webpack_require__(157);
-	var ResourceSystem = __webpack_require__(165);
+	var LightingSystem = __webpack_require__(147);
+	var TerrainSystem = __webpack_require__(148);
+	var GrowthSystem = __webpack_require__(154);
+	var MovementSystem = __webpack_require__(157);
+	var ActionSystem = __webpack_require__(158);
+	var ResourceSystem = __webpack_require__(146);
 
 	var game;
 	var assets = ['assets/sprites.json', 'assets/herbs.json', 'assets/leaves.json'];
@@ -86,12 +86,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	  game = new Game({
 	    assets,
 	    ready: function (game, loader, rawResources) {
-	      var resources = ResourceSystem.setup(assets, rawResources);
-	      SpriteSystem.setup(game.stage, resources);
+	      ResourceSystem.setup(assets, rawResources);
+	      SpriteSystem.setup(game.stage);
 	      LightingSystem.setup(game.stage);
 	      ControlSystem.setup(document.body);
-
-	      GrowthSystem.setup(resources);
 	      TerrainSystem.generate(12, 12);
 
 	      var character = new Character(0, 0);
@@ -111,11 +109,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  // Other component updates.
 	  registerComponent('Sprite',  __webpack_require__(143));
-	  registerComponent('Terrain', __webpack_require__(148));
+	  registerComponent('Terrain', __webpack_require__(149));
 	  registerComponent('Movable',  __webpack_require__(142));
 	  registerComponent('Position',  __webpack_require__(141));
-	  registerComponent('Growth',  __webpack_require__(154));
-	  registerComponent('Genome',  __webpack_require__(160));
+	  registerComponent('Growth',  __webpack_require__(155));
+	  registerComponent('Genome',  __webpack_require__(161));
 
 	  var view = game.start();
 	  document.body.appendChild(view);
@@ -45887,14 +45885,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var Sprite = __webpack_require__(143);
 	var Position = __webpack_require__(141);
+	var Resources = __webpack_require__(146);
+
 	var PIXI = __webpack_require__(4);
 	var _ = __webpack_require__(1);
 
 	var layers;
 	var pixis;
-	var resources;
 
-	function setup(stage, _resources) {
+	function setup(stage) {
 	  layers = [ // 4 layers
 	    new PIXI.Container(), // 0: background
 	    new PIXI.Container(), // 1: foreground
@@ -45902,7 +45901,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	    new PIXI.Container()  // 3: interface
 	  ];
 
-	  resources = _resources;
 	  pixis = [];
 	  _.each(layers, function (layer) { stage.addChild(layer); });
 	}
@@ -45935,7 +45933,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	function updateSprite(sprite, time) {
 	  var spf = 1000 / sprite.fps;
-	  var textureset = getTextureSet(sprite.frameset);
+	  var textureset = Resources.getTextureSet(sprite.frameset);
 	  var increment = sprite.fps && (time - sprite.last_tick >= spf);
 	  var frameindex = Math.min(sprite.frameindex, textureset.length - 1);
 	  var nextFrame;
@@ -45952,8 +45950,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 	function updatePixiContainer(container, sprite, position) {
+	  var resources = Resources.get();
 	  var basesprite = getPixiSprite(container, 0);
-	  var basetexture = getTextureSet(sprite.frameset)[sprite.frameindex];
+	  var basetexture = Resources.getTextureSet(sprite.frameset)[sprite.frameindex];
 	  var basescale = resources.tile * resources.scale;
 	  var { x, y } = getPixiPosition(container, basescale, position.x, position.y);
 
@@ -45980,7 +45979,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      container.addChildAt(pixisprite, pixispriteIndex);
 	    }
 	    var subposition = getPixiPosition(pixisprite, resources.scale, subsprite.x, subsprite.y);
-	    pixisprite.texture = getTextureSet(subsprite.frameset)[0];
+	    pixisprite.texture = Resources.getTextureSet(subsprite.frameset)[0];
 	    pixisprite.scale.set(subscale, subscale);
 	    pixisprite.position.set(subposition.x, subposition.y);
 	  });
@@ -45988,11 +45987,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return container;
 	}
 
-	function getTextureSet(frameset) {
-	  return resources.textures[frameset];
-	}
-
 	function getPixi(i) {
+	  var resources = Resources.get();
 	  var scale = resources.scale;
 	  if (!pixis[i]) {
 	    var pixisprite = makePixiSprite();
@@ -46031,6 +46027,82 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 146 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var _ = __webpack_require__(1);
+
+	var resources;
+
+	function get() {
+	  return resources;
+	}
+
+	function set({ scale, tile, textures, frames, raw }) {
+	  resources = { scale, tile, textures, frames, raw };
+	}
+
+	function setup(assets, raw) {
+	  function parseFrames(_frames) {
+	    return _.chain(_frames).map(function (frame, i) {
+	        frame.index = i;
+	        return frame;
+	      }).groupBy('name').value();
+	  }
+
+	  function parseTextures(_frames, _textures) {
+	    return _.chain(parseFrames(_frames))
+	      .mapValues(function (set) {
+	        return _.map(set, function (frame) {
+	          return _textures[frame.index];
+	        });
+	      }).value();
+	  }
+
+	  var assetResources = assets.map(asset => raw[asset]);
+	  var tile = assetResources[0].data.meta.tile;
+	  var _frames = _.chain(assetResources)
+	    .map(r => r.data.frames)
+	    .flatten().value();
+	  var _textures = _.chain(assetResources)
+	    .map(r => _.map(r.textures))
+	    .flatten().value();
+
+	  var textures = parseTextures(_frames, _textures);
+	  var frames = parseFrames(_frames);
+
+	  set({ scale: 4, tile, textures, frames, raw });
+	  return get();
+	}
+
+	function getTextureSet(frameset) {
+	  return resources.textures[frameset];
+	}
+
+	function getFrameSet(frameset) {
+	  return resources.frames[frameset];
+	}
+
+	function getStemFrameSetKey(type, appearance, size) {
+	  if (size === 0) return 'growth-0_1';
+	  return `${type}.${appearance}.${size}`;
+	}
+
+	function getLeafFrameSetKey(appearance) {
+	  return `leaf.${appearance}`;
+	}
+
+	module.exports = {
+	  setup,
+	  get,
+	  getTextureSet,
+	  getFrameSet,
+	  getStemFrameSetKey,
+	  getLeafFrameSetKey
+	};
+
+
+/***/ },
+/* 147 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -46170,18 +46242,18 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 147 */
+/* 148 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
 	var _ = __webpack_require__(1);
 	var Entity = __webpack_require__(139);
-	var Terrain = __webpack_require__(148);
-	var Arable = __webpack_require__(149);
+	var Terrain = __webpack_require__(149);
+	var Arable = __webpack_require__(150);
 	var Position = __webpack_require__(141);
 	var Sprite = __webpack_require__(143);
-	var pairing = __webpack_require__(150);
-	var random = __webpack_require__(151);
+	var pairing = __webpack_require__(151);
+	var random = __webpack_require__(152);
 	var tiles = {};
 
 	function update() {
@@ -46280,7 +46352,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 148 */
+/* 149 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -46294,7 +46366,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 149 */
+/* 150 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//var _ = require('lodash');
@@ -46311,7 +46383,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 150 */
+/* 151 */
 /***/ function(module, exports) {
 
 	// from http://sachiniscool.blogspot.com/2011/06/cantor-pairing-function-and-reversal.html
@@ -46319,11 +46391,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 151 */
+/* 152 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var MersenneTwister = __webpack_require__(152);
+	var MersenneTwister = __webpack_require__(153);
 	var mt = new MersenneTwister();
 
 	function seed(value) {
@@ -46346,7 +46418,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 152 */
+/* 153 */
 /***/ function(module, exports) {
 
 	/*
@@ -46562,22 +46634,18 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 153 */
+/* 154 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var Growth = __webpack_require__(154);
+	var Growth = __webpack_require__(155);
 	var Position = __webpack_require__(141);
 	var Sprite = __webpack_require__(143);
-	var Arable = __webpack_require__(149);
-	var TerrainSystem = __webpack_require__(147);
+	var Arable = __webpack_require__(150);
+	var TerrainSystem = __webpack_require__(148);
+	var Resources = __webpack_require__(146);
 
-	var GrowthStages = __webpack_require__(155);
-	var resources;
-
-	function setup(_resources) {
-	  resources = _resources;
-	}
+	var GrowthStages = __webpack_require__(156);
 
 	function update(gametime) {
 	  var DAY = 60*24;
@@ -46620,23 +46688,22 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	function frameset(growth) {
 	  var { stems, appearance_stem } = growth;
-	  var stemFrameset = 'growth-0_1';
+	  var stemSize = stems;
 	  if (stems > 0) {
-	    var stemSize = Math.floor(Math.min(stems, 9)) - 1; // max 80
+	    stemSize = Math.floor(Math.min(stems, 9)) - 1; // max 80
 	    stemSize = stemSize * 10 || 5;
-	    stemFrameset = `herbs.${appearance_stem}.${stemSize}`;
 	  }
-	  return stemFrameset;
+	  return Resources.getStemFrameSetKey('herbs', appearance_stem, stemSize);
 	}
 
 	function subsprites(growth, stemFrame) {
 	  var subsprites = [];
 	  var { leaves, appearance_leaf } = growth;
-	  var stemMarkers = resources.frames[stemFrame][0].markers;
+	  var stemMarkers = Resources.getFrameSet(stemFrame)[0].markers;
 	  var numLeaves = Math.min(stemMarkers.length, leaves);
 	  for (var i = 0; i < numLeaves; i++) {
 	    subsprites.push(Sprite.Subsprite({
-	      frameset: `leaf.${appearance_leaf}`,
+	      frameset: Resources.getLeafFrameSetKey(appearance_leaf),
 	      x: stemMarkers[i][0],
 	      y: stemMarkers[i][1],
 	      scale: 0.5
@@ -46657,13 +46724,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 	module.exports = {
-	  setup,
 	  update
 	};
 
 
 /***/ },
-/* 154 */
+/* 155 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -46712,7 +46778,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 155 */
+/* 156 */
 /***/ function(module, exports) {
 
 	
@@ -46853,7 +46919,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 156 */
+/* 157 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -46936,11 +47002,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 157 */
+/* 158 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var Control = __webpack_require__(144);
-	var ActionPlant = __webpack_require__(158);
+	var ActionPlant = __webpack_require__(159);
 	var _ = __webpack_require__(1);
 
 	var actionMap = {
@@ -46965,16 +47031,16 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 158 */
+/* 159 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
 	var _ = __webpack_require__(1);
-	var Plant = __webpack_require__(159);
+	var Plant = __webpack_require__(160);
 	var Position = __webpack_require__(141);
-	var GenomeSystem = __webpack_require__(161);
-	var TerrainSystem = __webpack_require__(147);
-	var genomeLib = __webpack_require__(162);
+	var GenomeSystem = __webpack_require__(162);
+	var TerrainSystem = __webpack_require__(148);
+	var genomeLib = __webpack_require__(163);
 
 	var randomGenome = GenomeSystem.generator(genomeLib, 1);
 	var timeout = 500;
@@ -47003,17 +47069,17 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 159 */
+/* 160 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
 	var _ = __webpack_require__(1);
 	var Entity = __webpack_require__(139);
-	var Growth = __webpack_require__(154);
+	var Growth = __webpack_require__(155);
 	var Position = __webpack_require__(141);
 	var Sprite = __webpack_require__(143);
-	var Genome = __webpack_require__(160);
-	var GenomeSystem = __webpack_require__(161);
+	var Genome = __webpack_require__(161);
+	var GenomeSystem = __webpack_require__(162);
 
 	function Plant(chromosomes, x, y) {
 	  var plant = new Entity();
@@ -47029,7 +47095,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 	Plant.define = function (key, component, expression) {
-	  var definitions = __webpack_require__(163);
+	  var definitions = __webpack_require__(164);
 	  var definition = definitions[key];
 	  var value;
 	  for (var attr in definition) {
@@ -47039,7 +47105,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 	Plant.type = function (expression) {
-	  var types = __webpack_require__(164);
+	  var types = __webpack_require__(165);
 	  var traits = expression.traits;
 	  var counts = expression.counts;
 	  var output;
@@ -47059,7 +47125,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 160 */
+/* 161 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -47079,13 +47145,13 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 161 */
+/* 162 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
 	var _ = __webpack_require__(1);
-	var random = __webpack_require__(151);
-	var genomeLibrary = __webpack_require__(162);
+	var random = __webpack_require__(152);
+	var genomeLibrary = __webpack_require__(163);
 
 	function meiosis(genome) {
 	  var zygote = [];
@@ -47192,7 +47258,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 162 */
+/* 163 */
 /***/ function(module, exports) {
 
 	var library = {
@@ -47227,7 +47293,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 163 */
+/* 164 */
 /***/ function(module, exports) {
 
 	module.exports = {
@@ -47261,7 +47327,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 164 */
+/* 165 */
 /***/ function(module, exports) {
 
 	var types = [
@@ -47297,63 +47363,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	];
 
 	module.exports = types;
-
-
-/***/ },
-/* 165 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var _ = __webpack_require__(1);
-
-	var resources;
-
-	function get() {
-	  return resources;
-	}
-
-	function setup(assets, raw) {
-	  function parseFrames(_frames) {
-	    return _.chain(_frames).map(function (frame, i) {
-	        frame.index = i;
-	        return frame;
-	      }).groupBy('name').value();
-	  }
-
-	  function parseTextures(_frames, _textures) {
-	    return _.chain(parseFrames(_frames))
-	      .mapValues(function (set) {
-	        return _.map(set, function (frame) {
-	          return _textures[frame.index];
-	        });
-	      }).value();
-	  }
-
-	  var assetResources = assets.map(asset => raw[asset]);
-	  var tile = assetResources[0].data.meta.tile;
-	  var _frames = _.chain(assetResources)
-	    .map(r => r.data.frames)
-	    .flatten().value();
-	  var _textures = _.chain(assetResources)
-	    .map(r => _.map(r.textures))
-	    .flatten().value();
-
-	  var textures = parseTextures(_frames, _textures);
-	  var frames = parseFrames(_frames);
-
-	  resources = {
-	    scale: 4,
-	    tile,
-	    textures,
-	    frames,
-	    raw
-	  };
-	  return get();
-	}
-
-	module.exports = {
-	  get,
-	  setup
-	};
 
 
 /***/ },

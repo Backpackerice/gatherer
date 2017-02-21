@@ -5,15 +5,18 @@ var Growth = require('../src/components/growth.js');
 var GenomeSystem = require('../src/systems/genome.js');
 var GrowthSystem = require('../src/systems/growth.js');
 var TerrainSystem = require('../src/systems/terrain.js');
+var Resources = require('../src/systems/resources.js');
 var GameTime = require('../src/base/time.js');
 
-xdescribe('growth system', function () {
+describe('growth system', function () {
   var gametime = new GameTime(0, Date.now());
   var generator = GenomeSystem.generator();
+  var getFrameSet = Resources.getFrameSet;
 
   before(function () {
     TerrainSystem.generate(4, 4);
     TerrainSystem.update();
+    Resources.getFrameSet = () => [{ markers: [] }];
   });
 
   beforeEach(function () {
@@ -35,5 +38,6 @@ xdescribe('growth system', function () {
 
   after(function () {
     TerrainSystem.clear();
+    Resources.getFrameSet = getFrameSet;
   });
 });

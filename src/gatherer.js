@@ -30,12 +30,10 @@ Gatherer.start = function () {
   game = new Game({
     assets,
     ready: function (game, loader, rawResources) {
-      var resources = ResourceSystem.setup(assets, rawResources);
-      SpriteSystem.setup(game.stage, resources);
+      ResourceSystem.setup(assets, rawResources);
+      SpriteSystem.setup(game.stage);
       LightingSystem.setup(game.stage);
       ControlSystem.setup(document.body);
-
-      GrowthSystem.setup(resources);
       TerrainSystem.generate(12, 12);
 
       var character = new Character(0, 0);
