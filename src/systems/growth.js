@@ -62,12 +62,14 @@ function subsprites(growth, stemFrame) {
   var { leaves, appearance_leaf } = growth;
   var stemMarkers = Resources.getFrameSet(stemFrame)[0].markers;
   var numLeaves = Math.min(stemMarkers.length, leaves);
+  var leafRotations = [-0.25 * Math.PI, 0.25 * Math.PI];
   for (var i = 0; i < numLeaves; i++) {
     subsprites.push(Sprite.Subsprite({
       frameset: Resources.getLeafFrameSetKey(appearance_leaf),
       x: stemMarkers[i][0],
       y: stemMarkers[i][1],
-      scale: 0.5
+      scale: 0.5,
+      rotation: leafRotations[i % 2]
     }));
   }
   return subsprites;

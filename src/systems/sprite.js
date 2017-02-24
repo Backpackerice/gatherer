@@ -98,6 +98,7 @@ function updatePixiContainer(container, sprite, position) {
     pixisprite.texture = Resources.getTextureSet(subsprite.frameset)[0];
     pixisprite.scale.set(subscale, subscale);
     pixisprite.position.set(subposition.x, subposition.y);
+    pixisprite.rotation = subsprite.rotation;
   });
 
   return container;
