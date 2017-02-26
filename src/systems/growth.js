@@ -60,7 +60,7 @@ function frameset(growth) {
 function subsprites(growth, stemFrame) {
   var subsprites = [];
   var { leaves, appearance_leaf } = growth;
-  var stemMarkers = Resources.getFrameSet(stemFrame)[0].markers;
+  var stemMarkers = Resources.getStemFrameNodules(stemFrame);
   var numLeaves = Math.min(stemMarkers.length, leaves);
   var rotationAdj = [0.25, 0.4, 0.55, 0.7, 0.85, 1];
   var leafRotations = [-Math.PI, Math.PI];

@@ -46089,6 +46089,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return `${type}.${appearance}.${size}`;
 	}
 
+	function getStemFrameNodules(frameset) {
+	  if (frameset === 'growth-0_1') return [];
+	  return getFrameSet(frameset)[0].meta.nodules;
+	}
+
 	function getLeafFrameSetKey(appearance) {
 	  return `leaf.${appearance}`;
 	}
@@ -46099,6 +46104,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  getTextureSet,
 	  getFrameSet,
 	  getStemFrameSetKey,
+	  getStemFrameNodules,
 	  getLeafFrameSetKey
 	};
 
@@ -46701,7 +46707,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	function subsprites(growth, stemFrame) {
 	  var subsprites = [];
 	  var { leaves, appearance_leaf } = growth;
-	  var stemMarkers = Resources.getFrameSet(stemFrame)[0].markers;
+	  var stemMarkers = Resources.getStemFrameNodules(stemFrame);
 	  var numLeaves = Math.min(stemMarkers.length, leaves);
 	  var rotationAdj = [0.25, 0.4, 0.55, 0.7, 0.85, 1];
 	  var leafRotations = [-Math.PI, Math.PI];

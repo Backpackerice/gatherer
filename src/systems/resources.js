@@ -56,6 +56,11 @@ function getStemFrameSetKey(type, appearance, size) {
   return `${type}.${appearance}.${size}`;
 }
 
+function getStemFrameNodules(frameset) {
+  if (frameset === 'growth-0_1') return [];
+  return getFrameSet(frameset)[0].meta.nodules;
+}
+
 function getLeafFrameSetKey(appearance) {
   return `leaf.${appearance}`;
 }
@@ -66,5 +71,6 @@ module.exports = {
   getTextureSet,
   getFrameSet,
   getStemFrameSetKey,
+  getStemFrameNodules,
   getLeafFrameSetKey
 };
