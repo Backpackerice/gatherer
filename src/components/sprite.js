@@ -7,6 +7,7 @@ var Sprite = new Component('sprite', {
   fps: 0,
   layer: null,
   subsprites: [],
+  color_filter: [1, 1, 1, 1], // [r, g, b, a]
   last_tick: null
 });
 

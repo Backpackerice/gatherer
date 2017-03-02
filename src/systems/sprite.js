@@ -9,6 +9,8 @@ var _ = require('lodash');
 var layers;
 var pixis;
 
+var COLOR_FILTER_INDEX = 0;
+
 function setup(stage) {
   layers = [ // 4 layers
     new PIXI.Container(), // 0: background
@@ -73,6 +75,12 @@ function updatePixiContainer(container, sprite, position) {
   var { x, y } = getPixiPosition(container, basescale, position.x, position.y);
 
   basesprite.texture = basetexture;
+  basesprite.filters[COLOR_FILTER_INDEX].matrix = [
+    sprite.color_filter[0], 0, 0, 0, 0,
+    0, sprite.color_filter[1], 0, 0, 0,
+    0, 0, sprite.color_filter[2], 0, 0,
+    0, 0, 0, sprite.color_filter[3], 0
+  ];
   container.x = x;
   container.y = y;
 
@@ -118,7 +126,14 @@ function getPixi(i) {
 }
 
 function makePixiSprite() {
-  return new PIXI.Sprite(PIXI.Texture.fromFrame(0));
+  var sprite = new PIXI.Sprite(PIXI.Texture.fromFrame(0));
+  var colorFilter = new PIXI.filters.ColorMatrixFilter();
+
+  var filters = [];
+  filters[COLOR_FILTER_INDEX] = colorFilter;
+
+  sprite.filters = filters;
+  return sprite;
 }
 
 function getPixiSprite(container, index) {

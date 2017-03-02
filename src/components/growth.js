@@ -37,7 +37,9 @@ var Growth = new Component('growth', {
 
   // appearance
   appearance_stem: 0,
-  appearance_leaf: 0
+  appearance_leaf: 0,
+
+  color_stem: [1, 1, 1, 1]
 });
 
 module.exports = Growth;

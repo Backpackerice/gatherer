@@ -45810,6 +45810,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  fps: 0,
 	  layer: null,
 	  subsprites: [],
+	  color_filter: [1, 1, 1, 1], // [r, g, b, a]
 	  last_tick: null
 	});
 
@@ -45894,6 +45895,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	var layers;
 	var pixis;
 
+	var COLOR_FILTER_INDEX = 0;
+
 	function setup(stage) {
 	  layers = [ // 4 layers
 	    new PIXI.Container(), // 0: background
@@ -45958,6 +45961,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var { x, y } = getPixiPosition(container, basescale, position.x, position.y);
 
 	  basesprite.texture = basetexture;
+	  basesprite.filters[COLOR_FILTER_INDEX].matrix = [
+	    sprite.color_filter[0], 0, 0, 0, 0,
+	    0, sprite.color_filter[1], 0, 0, 0,
+	    0, 0, sprite.color_filter[2], 0, 0,
+	    0, 0, 0, sprite.color_filter[3], 0
+	  ];
 	  container.x = x;
 	  container.y = y;
 
@@ -46003,7 +46012,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 	function makePixiSprite() {
-	  return new PIXI.Sprite(PIXI.Texture.fromFrame(0));
+	  var sprite = new PIXI.Sprite(PIXI.Texture.fromFrame(0));
+	  var colorFilter = new PIXI.filters.ColorMatrixFilter();
+
+	  var filters = [];
+	  filters[COLOR_FILTER_INDEX] = colorFilter;
+
+	  sprite.filters = filters;
+	  return sprite;
 	}
 
 	function getPixiSprite(container, index) {
@@ -46691,6 +46707,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    sprite.frameset = frameset(growth);
 	    sprite.subsprites = subsprites(growth, sprite.frameset);
+	    sprite.color_filter = growth.color_stem;
 	  });
 	}
 
@@ -46710,7 +46727,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var stemMarkers = Resources.getStemFrameNodules(stemFrame);
 	  var numLeaves = Math.min(stemMarkers.length, leaves);
 	  var rotationAdj = [0.25, 0.4, 0.55, 0.7, 0.85, 1];
-	  var leafRotations = [-Math.PI, Math.PI];
+	  var leafRotations = [Math.PI, -Math.PI];
 	  var deathTicks = Math.min(growth.death_ticks, rotationAdj.length - 1);
 	  for (var i = 0; i < numLeaves; i++) {
 	    subsprites.push(Sprite.Subsprite({
@@ -46783,7 +46800,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  // appearance
 	  appearance_stem: 0,
-	  appearance_leaf: 0
+	  appearance_leaf: 0,
+
+	  color_stem: [1, 1, 1, 1]
 	});
 
 	module.exports = Growth;
@@ -47317,7 +47336,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	    cost_seed: getCost('seed'),
 
 	    appearance_stem: getAppearance('stem', 0, 3),
-	    appearance_leaf: getAppearance('leaf', 0, 4)
+	    appearance_leaf: getAppearance('leaf', 0, 4),
+
+	    color_stem: getColor('stem')
 	  }
 	};
 
@@ -47335,6 +47356,44 @@ return /******/ (function(modules) { // webpackBootstrap
 	    attrTrait = Math.min(attrTrait, max);
 	    attrTrait = Math.max(attrTrait, min);
 	    return attrTrait;
+	  };
+	}
+
+	function getColor(attr) {
+	  return function (base, expression) {
+	    var UPPER_BOUND = 3;
+	    var baseColors = [1, 1, 1];
+	    var colors = [0, 0, 0];
+
+	    var computeColor = (baseColor, color, maxColor) => {
+	      var value = Math.min(color, UPPER_BOUND);
+	      return (baseColor * UPPER_BOUND - maxColor + value) / UPPER_BOUND;
+	    };
+
+	    if (expression.counts) {
+	      expression.counts.forEach((countObj) => {
+	        var red = 0;
+	        var yellow = 0;
+	        var blue = 0;
+	        if (attr in countObj) {
+	          red = countObj.red || 0;
+	          yellow = countObj.yellow || 0;
+	          blue = countObj.blue || 0;
+	        }
+	        colors[0] += yellow / 2 + red;
+	        colors[1] += yellow / 2 + blue / 2;
+	        colors[2] += blue;
+	      });
+	    }
+
+	    var maxColor = Math.max.apply(null, colors);
+
+	    return [
+	      computeColor(baseColors[0], colors[0], maxColor),
+	      computeColor(baseColors[1], colors[1], maxColor),
+	      computeColor(baseColors[2], colors[2], maxColor),
+	      1
+	    ];
 	  };
 	}
 

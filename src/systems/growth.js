@@ -44,6 +44,7 @@ function update(gametime) {
 
     sprite.frameset = frameset(growth);
     sprite.subsprites = subsprites(growth, sprite.frameset);
+    sprite.color_filter = growth.color_stem;
   });
 }
 
@@ -63,7 +64,7 @@ function subsprites(growth, stemFrame) {
   var stemMarkers = Resources.getStemFrameNodules(stemFrame);
   var numLeaves = Math.min(stemMarkers.length, leaves);
   var rotationAdj = [0.25, 0.4, 0.55, 0.7, 0.85, 1];
-  var leafRotations = [-Math.PI, Math.PI];
+  var leafRotations = [Math.PI, -Math.PI];
   var deathTicks = Math.min(growth.death_ticks, rotationAdj.length - 1);
   for (var i = 0; i < numLeaves; i++) {
     subsprites.push(Sprite.Subsprite({
