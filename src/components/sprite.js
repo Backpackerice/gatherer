@@ -11,13 +11,21 @@ var Sprite = new Component('sprite', {
   last_tick: null
 });
 
-Sprite.Subsprite = function ({ frameset, x, y, scale = 1, rotation = 0 }) {
+Sprite.Subsprite = function ({
+  frameset,
+  x,
+  y,
+  scale = 1,
+  rotation = 0,
+  color_filter = [1, 1, 1, 1]
+}) {
   return {
     frameset,
     x,
     y,
     scale,
-    rotation
+    rotation,
+    color_filter
   };
 };
 

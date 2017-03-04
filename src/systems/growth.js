@@ -60,7 +60,7 @@ function frameset(growth) {
 
 function subsprites(growth, stemFrame) {
   var subsprites = [];
-  var { leaves, appearance_leaf } = growth;
+  var { leaves, appearance_leaf, color_leaf } = growth;
   var stemMarkers = Resources.getStemFrameNodules(stemFrame);
   var numLeaves = Math.min(stemMarkers.length, leaves);
   var rotationAdj = [0.25, 0.4, 0.55, 0.7, 0.85, 1];
@@ -72,7 +72,8 @@ function subsprites(growth, stemFrame) {
       x: stemMarkers[i][0],
       y: stemMarkers[i][1],
       scale: 0.5,
-      rotation: leafRotations[i % 2] * rotationAdj[deathTicks]
+      rotation: leafRotations[i % 2] * rotationAdj[deathTicks],
+      color_filter: color_leaf
     }));
   }
   return subsprites;

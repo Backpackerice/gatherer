@@ -9,7 +9,8 @@ module.exports = {
     appearance_stem: getAppearance('stem', 0, 3),
     appearance_leaf: getAppearance('leaf', 0, 4),
 
-    color_stem: getColor('stem')
+    color_stem: getColor('stem'),
+    color_leaf: getColor('leaf')
   }
 };
 

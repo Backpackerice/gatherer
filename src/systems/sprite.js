@@ -107,6 +107,12 @@ function updatePixiContainer(container, sprite, position) {
     pixisprite.scale.set(subscale, subscale);
     pixisprite.position.set(subposition.x, subposition.y);
     pixisprite.rotation = subsprite.rotation;
+    pixisprite.filters[COLOR_FILTER_INDEX].matrix = [
+      subsprite.color_filter[0], 0, 0, 0, 0,
+      0, subsprite.color_filter[1], 0, 0, 0,
+      0, 0, subsprite.color_filter[2], 0, 0,
+      0, 0, 0, subsprite.color_filter[3], 0
+    ];
   });
 
   return container;

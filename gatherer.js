@@ -45814,13 +45814,21 @@ return /******/ (function(modules) { // webpackBootstrap
 	  last_tick: null
 	});
 
-	Sprite.Subsprite = function ({ frameset, x, y, scale = 1, rotation = 0 }) {
+	Sprite.Subsprite = function ({
+	  frameset,
+	  x,
+	  y,
+	  scale = 1,
+	  rotation = 0,
+	  color_filter = [1, 1, 1, 1]
+	}) {
 	  return {
 	    frameset,
 	    x,
 	    y,
 	    scale,
-	    rotation
+	    rotation,
+	    color_filter
 	  };
 	};
 
@@ -45993,6 +46001,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	    pixisprite.scale.set(subscale, subscale);
 	    pixisprite.position.set(subposition.x, subposition.y);
 	    pixisprite.rotation = subsprite.rotation;
+	    pixisprite.filters[COLOR_FILTER_INDEX].matrix = [
+	      subsprite.color_filter[0], 0, 0, 0, 0,
+	      0, subsprite.color_filter[1], 0, 0, 0,
+	      0, 0, subsprite.color_filter[2], 0, 0,
+	      0, 0, 0, subsprite.color_filter[3], 0
+	    ];
 	  });
 
 	  return container;
@@ -46723,7 +46737,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	function subsprites(growth, stemFrame) {
 	  var subsprites = [];
-	  var { leaves, appearance_leaf } = growth;
+	  var { leaves, appearance_leaf, color_leaf } = growth;
 	  var stemMarkers = Resources.getStemFrameNodules(stemFrame);
 	  var numLeaves = Math.min(stemMarkers.length, leaves);
 	  var rotationAdj = [0.25, 0.4, 0.55, 0.7, 0.85, 1];
@@ -46735,7 +46749,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	      x: stemMarkers[i][0],
 	      y: stemMarkers[i][1],
 	      scale: 0.5,
-	      rotation: leafRotations[i % 2] * rotationAdj[deathTicks]
+	      rotation: leafRotations[i % 2] * rotationAdj[deathTicks],
+	      color_filter: color_leaf
 	    }));
 	  }
 	  return subsprites;
@@ -46802,7 +46817,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  appearance_stem: 0,
 	  appearance_leaf: 0,
 
-	  color_stem: [1, 1, 1, 1]
+	  color_stem: [1, 1, 1, 1],
+	  color_leaf: [1, 1, 1, 1]
 	});
 
 	module.exports = Growth;
@@ -47338,7 +47354,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    appearance_stem: getAppearance('stem', 0, 3),
 	    appearance_leaf: getAppearance('leaf', 0, 4),
 
-	    color_stem: getColor('stem')
+	    color_stem: getColor('stem'),
+	    color_leaf: getColor('leaf')
 	  }
 	};
 
