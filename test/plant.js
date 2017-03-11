@@ -6,10 +6,14 @@ var Genome = require('../src/components/genome.js');
 var Position = require('../src/components/position.js');
 var Sprite = require('../src/components/sprite.js');
 var TerrainSystem = require('../src/systems/terrain.js');
+var random = require('../src/base/random.js');
 
 describe('plant', function () {
-  TerrainSystem.generate(4, 4);
-  TerrainSystem.update();
+  before(function () {
+    TerrainSystem.generate(4, 4);
+    TerrainSystem.update();
+  });
+
   it('creates a plant given chromosomes, x, and y', function () {
     var chromosomes = [
       ['tuber.tuber', 'seed.flower.flower'],
@@ -30,6 +34,10 @@ describe('plant', function () {
     expect(genome.chromosomes).to.deep.equal(chromosomes);
     expect(position.x).to.equal(2);
     expect(position.y).to.equal(1);
+  });
+
+  after(function () {
+    TerrainSystem.clear();
   });
 });
 

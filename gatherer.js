@@ -46377,6 +46377,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return entity.set(Sprite, {layer: 0, frameset: props.frameset});
 	}
 
+	function findArablePositions() {
+	  var positions = [];
+	  _.each(tiles, (tile) => {
+	    var position = Position.get(tile);
+	    if (arable(position.x, position.y)){
+	      positions.push(position);
+	    }
+	  });
+	  return positions;
+	}
+
 	function arable(x, y) {
 	  var arable = Arable.get(get(x, y));
 	  return arable && !arable.planted;
@@ -46402,7 +46413,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  arable: arable,
 	  plant: plant,
 	  generate: generate,
-	  clear: clear
+	  clear: clear,
+	  findArablePositions
 	};
 
 
