@@ -1,5 +1,3 @@
-var _ = require('lodash');
-
 var Gatherer = {};
 var Game = require('./base/game.js');
 
@@ -54,6 +52,8 @@ Gatherer.start = function () {
   // Other component updates.
   registerComponent('Sprite',  require('./components/sprite.js'));
   registerComponent('Terrain', require('./components/terrain.js'));
+  registerComponent('Arable',  require('./components/arable.js'));
+  registerComponent('Resource',  require('./components/resource.js'));
   registerComponent('Movable',  require('./components/movable.js'));
   registerComponent('Position',  require('./components/position.js'));
   registerComponent('Growth',  require('./components/growth.js'));

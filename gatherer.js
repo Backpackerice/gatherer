@@ -54,10 +54,8 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 0 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var _ = __webpack_require__(1);
-
 	var Gatherer = {};
-	var Game = __webpack_require__(3);
+	var Game = __webpack_require__(1);
 
 	// Entities
 	var Character = __webpack_require__(138);
@@ -110,6 +108,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  // Other component updates.
 	  registerComponent('Sprite',  __webpack_require__(143));
 	  registerComponent('Terrain', __webpack_require__(149));
+	  registerComponent('Arable',  __webpack_require__(150));
+	  registerComponent('Resource',  __webpack_require__(167));
 	  registerComponent('Movable',  __webpack_require__(142));
 	  registerComponent('Position',  __webpack_require__(141));
 	  registerComponent('Growth',  __webpack_require__(155));
@@ -124,6 +124,92 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 1 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var _ = __webpack_require__(2);
+	var PIXI = __webpack_require__(4);
+	var GameTime = __webpack_require__(137);
+
+	function Game (options) {
+	  this.width = options.width || window.innerWidth;
+	  this.height = options.height || window.innerHeight;
+	  this.stage = options.stage || new PIXI.Container(0x231b17);
+	  this.assets = options.assets || [];
+	  this.ready = options.ready || _.noop;
+	  this.progress = options.progress || _.noop;
+
+	  this.updaters = [];
+	  this.renderers = [];
+	  return this;
+	}
+
+	Game.prototype = {
+	  start: function (view) {
+	    PIXI.SCALE_MODES.DEFAULT = PIXI.SCALE_MODES.NEAREST;
+
+	    var loader = new PIXI.loaders.Loader();
+	    loader.add(this.assets);
+	    loader.on('complete', this.onReady.bind(this));
+	    loader.load();
+
+	    this.renderer = new PIXI.autoDetectRenderer(
+	      this.width, this.height, {view: view}
+	    );
+	    return this.renderer.view;
+	  },
+
+	  onReady: function (loader, resources) {
+	    GameTime.unpause();
+	    this.ready(this, loader, resources);
+	    this.loop();
+	  },
+
+	  registerUpdate: function (update) {
+	    this.updaters.push(update);
+	  },
+
+	  registerRender: function (render) {
+	    this.renderers.push(render);
+	  },
+
+	  update: function () {
+	    var oldGameTime = GameTime.now();
+	    var newGameTime = GameTime.update(); // Tick time first
+	    if (oldGameTime && newGameTime.days > oldGameTime.days) {
+	      console.log(newGameTime.days);
+	    }
+	    _.each(this.updaters, function (update) {
+	      update(newGameTime);
+	    });
+	  },
+
+	  render: function (time) {
+	    this.renderer.render(this.stage);
+	    _.each(this.renderers, function (render) {
+	      render(time);
+	    });
+	  },
+
+	  loop: function () {
+	    var lastTime = null;
+	    var animate = function (time) {
+	          if (!lastTime) lastTime = time;
+	          while (lastTime <= time) {
+	            this.update(lastTime);
+	            lastTime += 10; // 10 ms update batching
+	          }
+	          this.render(time);
+	          this.frame = requestAnimationFrame(animate);
+	        }.bind(this);
+	    this.frame = requestAnimationFrame(animate);
+	  }
+	};
+
+	module.exports = Game;
+
+
+/***/ },
+/* 2 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;/* WEBPACK VAR INJECTION */(function(global, module) {/**
@@ -17211,10 +17297,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	}.call(this));
 
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(2)(module)))
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(3)(module)))
 
 /***/ },
-/* 2 */
+/* 3 */
 /***/ function(module, exports) {
 
 	module.exports = function(module) {
@@ -17227,92 +17313,6 @@ return /******/ (function(modules) { // webpackBootstrap
 		}
 		return module;
 	}
-
-
-/***/ },
-/* 3 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var _ = __webpack_require__(1);
-	var PIXI = __webpack_require__(4);
-	var GameTime = __webpack_require__(137);
-
-	function Game (options) {
-	  this.width = options.width || window.innerWidth;
-	  this.height = options.height || window.innerHeight;
-	  this.stage = options.stage || new PIXI.Container(0x231b17);
-	  this.assets = options.assets || [];
-	  this.ready = options.ready || _.noop;
-	  this.progress = options.progress || _.noop;
-
-	  this.updaters = [];
-	  this.renderers = [];
-	  return this;
-	}
-
-	Game.prototype = {
-	  start: function (view) {
-	    PIXI.SCALE_MODES.DEFAULT = PIXI.SCALE_MODES.NEAREST;
-
-	    var loader = new PIXI.loaders.Loader();
-	    loader.add(this.assets);
-	    loader.on('complete', this.onReady.bind(this));
-	    loader.load();
-
-	    this.renderer = new PIXI.autoDetectRenderer(
-	      this.width, this.height, {view: view}
-	    );
-	    return this.renderer.view;
-	  },
-
-	  onReady: function (loader, resources) {
-	    GameTime.unpause();
-	    this.ready(this, loader, resources);
-	    this.loop();
-	  },
-
-	  registerUpdate: function (update) {
-	    this.updaters.push(update);
-	  },
-
-	  registerRender: function (render) {
-	    this.renderers.push(render);
-	  },
-
-	  update: function () {
-	    var oldGameTime = GameTime.now();
-	    var newGameTime = GameTime.update(); // Tick time first
-	    if (oldGameTime && newGameTime.days > oldGameTime.days) {
-	      console.log(newGameTime.days);
-	    }
-	    _.each(this.updaters, function (update) {
-	      update(newGameTime);
-	    });
-	  },
-
-	  render: function (time) {
-	    this.renderer.render(this.stage);
-	    _.each(this.renderers, function (render) {
-	      render(time);
-	    });
-	  },
-
-	  loop: function () {
-	    var lastTime = null;
-	    var animate = function (time) {
-	          if (!lastTime) lastTime = time;
-	          while (lastTime <= time) {
-	            this.update(lastTime);
-	            lastTime += 10; // 10 ms update batching
-	          }
-	          this.render(time);
-	          this.frame = requestAnimationFrame(animate);
-	        }.bind(this);
-	    this.frame = requestAnimationFrame(animate);
-	  }
-	};
-
-	module.exports = Game;
 
 
 /***/ },
@@ -45600,7 +45600,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 139 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var _ = __webpack_require__(1);
+	var _ = __webpack_require__(2);
 
 	function Entity() {
 	  this.id = _.uniqueId('e');
@@ -45644,7 +45644,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 140 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var _ = __webpack_require__(1);
+	var _ = __webpack_require__(2);
 	var Entity = __webpack_require__(139);
 
 	// Component Factory
@@ -45898,7 +45898,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var Resources = __webpack_require__(146);
 
 	var PIXI = __webpack_require__(4);
-	var _ = __webpack_require__(1);
+	var _ = __webpack_require__(2);
 
 	var layers;
 	var pixis;
@@ -46061,7 +46061,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 146 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var _ = __webpack_require__(1);
+	var _ = __webpack_require__(2);
 
 	var resources;
 
@@ -46284,7 +46284,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var _ = __webpack_require__(1);
+	var _ = __webpack_require__(2);
 	var Entity = __webpack_require__(139);
 	var Terrain = __webpack_require__(149);
 	var Arable = __webpack_require__(150);
@@ -47054,7 +47054,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var Control = __webpack_require__(144);
 	var ActionPlant = __webpack_require__(159);
-	var _ = __webpack_require__(1);
+	var _ = __webpack_require__(2);
 
 	var actionMap = {
 	  'plant': ActionPlant.perform
@@ -47082,7 +47082,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var _ = __webpack_require__(1);
+	var _ = __webpack_require__(2);
 	var Plant = __webpack_require__(160);
 	var Position = __webpack_require__(141);
 	var GenomeSystem = __webpack_require__(162);
@@ -47120,7 +47120,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var _ = __webpack_require__(1);
+	var _ = __webpack_require__(2);
 	var Entity = __webpack_require__(139);
 	var Growth = __webpack_require__(155);
 	var Position = __webpack_require__(141);
@@ -47196,7 +47196,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var _ = __webpack_require__(1);
+	var _ = __webpack_require__(2);
 	var random = __webpack_require__(152);
 	var genomeLibrary = __webpack_require__(163);
 
@@ -47470,6 +47470,21 @@ return /******/ (function(modules) { // webpackBootstrap
 	  HOUR: 60,
 	  DAY: 60 * 24
 	};
+
+
+/***/ },
+/* 167 */
+/***/ function(module, exports, __webpack_require__) {
+
+	//var _ = require('lodash');
+	var Component = __webpack_require__(140);
+
+	var Resource = new Component('resource', {
+	  water_level: 0,
+	  water_range: 0
+	});
+
+	module.exports = Resource;
 
 
 /***/ }
