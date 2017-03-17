@@ -25,7 +25,7 @@ var terrainTypes = [
     terrain: { type: 'spring' },
     sprite: { frameset: 'tile-water' },
     spring: {
-      water_power: 5,
+      water_level: 5,
       water_range: 1
     }
   }
@@ -82,7 +82,7 @@ function generateArable(entity, props) {
 function generateSpring(entity, props) {
   if (!props) return;
   return entity.set(Spring, {
-    water_power: props.water_power,
+    water_level: props.water_level,
     water_range: props.water_range
   });
 }
@@ -104,15 +104,21 @@ function findArablePositions() {
 }
 
 function arable(x, y) {
-  var arable = Arable.get(get(x, y));
-  return arable && !arable.planted;
+  var arableComponent = Arable.get(get(x, y));
+  return arableComponent;
+}
+
+function plantable(x, y) {
+  var isArable = arable(x, y);
+  return isArable && !isArable.planted;
 }
 
 function plant(entity, x, y) {
-  var tile = get(x, y);
-  var arable = Arable.get(tile.id);
-  arable.planted = entity.id;
-  return arable;
+  var isArable = arable(x, y);
+  var isPlantable = plantable(x, y);
+  if (!isPlantable) return;
+  isArable.planted = entity.id;
+  return isArable;
 }
 
 function clear() {
@@ -126,6 +132,7 @@ module.exports = {
   update: update,
   get: get,
   arable: arable,
+  plantable,
   plant: plant,
   generate: generate,
   clear: clear,

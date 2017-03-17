@@ -9,6 +9,7 @@ var ControlSystem = require('./systems/controls.js');
 var SpriteSystem = require('./systems/sprite.js');
 var LightingSystem = require('./systems/lighting.js');
 var TerrainSystem = require('./systems/terrain.js');
+var EnvironmentSystem = require('./systems/environment.js');
 var GrowthSystem = require('./systems/growth.js');
 var MovementSystem = require('./systems/movement.js');
 var ActionSystem = require('./systems/action.js');
@@ -42,6 +43,7 @@ Gatherer.start = function () {
   // updates in update loop
   game.registerUpdate(LightingSystem.update);
   game.registerUpdate(TerrainSystem.update);
+  game.registerUpdate(EnvironmentSystem.update);
   game.registerUpdate(GrowthSystem.update);
   game.registerUpdate(MovementSystem.update);
   game.registerUpdate(ActionSystem.update);
@@ -50,14 +52,14 @@ Gatherer.start = function () {
   game.registerRender(SpriteSystem.update);
 
   // Other component updates.
-  registerComponent('Sprite',  require('./components/sprite.js'));
-  registerComponent('Terrain', require('./components/terrain.js'));
-  registerComponent('Arable',  require('./components/arable.js'));
-  registerComponent('Spring',  require('./components/spring.js'));
+  registerComponent('Sprite',   require('./components/sprite.js'));
+  registerComponent('Terrain',  require('./components/terrain.js'));
+  registerComponent('Arable',   require('./components/arable.js'));
+  registerComponent('Spring',   require('./components/spring.js'));
   registerComponent('Movable',  require('./components/movable.js'));
-  registerComponent('Position',  require('./components/position.js'));
-  registerComponent('Growth',  require('./components/growth.js'));
-  registerComponent('Genome',  require('./components/genome.js'));
+  registerComponent('Position', require('./components/position.js'));
+  registerComponent('Growth',   require('./components/growth.js'));
+  registerComponent('Genome',   require('./components/genome.js'));
 
   var view = game.start();
   document.body.appendChild(view);

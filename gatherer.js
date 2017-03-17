@@ -65,9 +65,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	var SpriteSystem = __webpack_require__(145);
 	var LightingSystem = __webpack_require__(147);
 	var TerrainSystem = __webpack_require__(148);
-	var GrowthSystem = __webpack_require__(155);
-	var MovementSystem = __webpack_require__(158);
-	var ActionSystem = __webpack_require__(159);
+	var EnvironmentSystem = __webpack_require__(155);
+	var GrowthSystem = __webpack_require__(156);
+	var MovementSystem = __webpack_require__(159);
+	var ActionSystem = __webpack_require__(160);
 	var ResourceSystem = __webpack_require__(146);
 
 	var game;
@@ -78,7 +79,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 	// Development Testing
-	Gatherer.time = __webpack_require__(167);
+	Gatherer.time = __webpack_require__(168);
 
 	Gatherer.start = function () {
 	  game = new Game({
@@ -98,6 +99,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  // updates in update loop
 	  game.registerUpdate(LightingSystem.update);
 	  game.registerUpdate(TerrainSystem.update);
+	  game.registerUpdate(EnvironmentSystem.update);
 	  game.registerUpdate(GrowthSystem.update);
 	  game.registerUpdate(MovementSystem.update);
 	  game.registerUpdate(ActionSystem.update);
@@ -106,14 +108,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	  game.registerRender(SpriteSystem.update);
 
 	  // Other component updates.
-	  registerComponent('Sprite',  __webpack_require__(143));
-	  registerComponent('Terrain', __webpack_require__(149));
-	  registerComponent('Arable',  __webpack_require__(150));
-	  registerComponent('Spring',  __webpack_require__(151));
+	  registerComponent('Sprite',   __webpack_require__(143));
+	  registerComponent('Terrain',  __webpack_require__(149));
+	  registerComponent('Arable',   __webpack_require__(150));
+	  registerComponent('Spring',   __webpack_require__(151));
 	  registerComponent('Movable',  __webpack_require__(142));
-	  registerComponent('Position',  __webpack_require__(141));
-	  registerComponent('Growth',  __webpack_require__(156));
-	  registerComponent('Genome',  __webpack_require__(162));
+	  registerComponent('Position', __webpack_require__(141));
+	  registerComponent('Growth',   __webpack_require__(157));
+	  registerComponent('Genome',   __webpack_require__(163));
 
 	  var view = game.start();
 	  document.body.appendChild(view);
@@ -46310,7 +46312,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    terrain: { type: 'spring' },
 	    sprite: { frameset: 'tile-water' },
 	    spring: {
-	      water_power: 5,
+	      water_level: 5,
 	      water_range: 1
 	    }
 	  }
@@ -46367,7 +46369,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	function generateSpring(entity, props) {
 	  if (!props) return;
 	  return entity.set(Spring, {
-	    water_power: props.water_power,
+	    water_level: props.water_level,
 	    water_range: props.water_range
 	  });
 	}
@@ -46389,15 +46391,21 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 	function arable(x, y) {
-	  var arable = Arable.get(get(x, y));
-	  return arable && !arable.planted;
+	  var arableComponent = Arable.get(get(x, y));
+	  return arableComponent;
+	}
+
+	function plantable(x, y) {
+	  var isArable = arable(x, y);
+	  return isArable && !isArable.planted;
 	}
 
 	function plant(entity, x, y) {
-	  var tile = get(x, y);
-	  var arable = Arable.get(tile.id);
-	  arable.planted = entity.id;
-	  return arable;
+	  var isArable = arable(x, y);
+	  var isPlantable = plantable(x, y);
+	  if (!isPlantable) return;
+	  isArable.planted = entity.id;
+	  return isArable;
 	}
 
 	function clear() {
@@ -46411,6 +46419,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  update: update,
 	  get: get,
 	  arable: arable,
+	  plantable,
 	  plant: plant,
 	  generate: generate,
 	  clear: clear,
@@ -46720,14 +46729,65 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var Growth = __webpack_require__(156);
+	var Position = __webpack_require__(141);
+	var Spring = __webpack_require__(151);
+	var TerrainSystem = __webpack_require__(148);
+
+	var lastTick = null;
+
+	function update(gametime) {
+	  var DAY = 60*24;
+	  var time = gametime.time;
+
+	  lastTick = lastTick || time;
+
+	  // provide arable resources once per day
+	  if (time - lastTick < DAY) return;
+	  Spring.each(updateSpring);
+	}
+
+	function updateSpring(spring) {
+	  var MAX_LEVEL = 100;
+	  var range = spring.water_range;
+	  var level = spring.water_level;
+	  var {x, y} = Position.get(spring.entity);
+
+	  var arable;
+	  var minX = Math.max(0, x - range);
+	  var maxX = x + range;
+	  var minY = Math.max(0, y - range);
+	  var maxY = y + range;
+
+	  for (var i = minX; i < maxX; i++) {
+	    for (var j = minY; j < maxY; j++) {
+	      arable = TerrainSystem.arable(i, j);
+	      if (arable) {
+	        arable.water = Math.min(arable.water + level, MAX_LEVEL);
+	      }
+	    }
+	  }
+
+	  return spring;
+	}
+
+	module.exports = {
+	  update
+	};
+
+
+/***/ },
+/* 156 */
+/***/ function(module, exports, __webpack_require__) {
+
+	
+	var Growth = __webpack_require__(157);
 	var Position = __webpack_require__(141);
 	var Sprite = __webpack_require__(143);
 	var Arable = __webpack_require__(150);
 	var TerrainSystem = __webpack_require__(148);
 	var Resources = __webpack_require__(146);
 
-	var GrowthStages = __webpack_require__(157);
+	var GrowthStages = __webpack_require__(158);
 
 	function update(gametime) {
 	  var DAY = 60*24;
@@ -46817,7 +46877,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 156 */
+/* 157 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -46869,7 +46929,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 157 */
+/* 158 */
 /***/ function(module, exports) {
 
 	
@@ -47010,7 +47070,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 158 */
+/* 159 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -47093,11 +47153,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 159 */
+/* 160 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var Control = __webpack_require__(144);
-	var ActionPlant = __webpack_require__(160);
+	var ActionPlant = __webpack_require__(161);
 	var _ = __webpack_require__(2);
 
 	var actionMap = {
@@ -47122,16 +47182,16 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 160 */
+/* 161 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
 	var _ = __webpack_require__(2);
-	var Plant = __webpack_require__(161);
+	var Plant = __webpack_require__(162);
 	var Position = __webpack_require__(141);
-	var GenomeSystem = __webpack_require__(163);
+	var GenomeSystem = __webpack_require__(164);
 	var TerrainSystem = __webpack_require__(148);
-	var genomeLib = __webpack_require__(164);
+	var genomeLib = __webpack_require__(165);
 
 	var randomGenome = GenomeSystem.generator(genomeLib, 1);
 	var timeout = 500;
@@ -47160,17 +47220,17 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 161 */
+/* 162 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
 	var _ = __webpack_require__(2);
 	var Entity = __webpack_require__(139);
-	var Growth = __webpack_require__(156);
+	var Growth = __webpack_require__(157);
 	var Position = __webpack_require__(141);
 	var Sprite = __webpack_require__(143);
-	var Genome = __webpack_require__(162);
-	var GenomeSystem = __webpack_require__(163);
+	var Genome = __webpack_require__(163);
+	var GenomeSystem = __webpack_require__(164);
 
 	function Plant(chromosomes, x, y) {
 	  var plant = new Entity();
@@ -47186,7 +47246,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 	Plant.define = function (key, component, expression) {
-	  var definitions = __webpack_require__(165);
+	  var definitions = __webpack_require__(166);
 	  var definition = definitions[key];
 	  var value;
 	  for (var attr in definition) {
@@ -47196,7 +47256,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 	Plant.type = function (expression) {
-	  var types = __webpack_require__(166);
+	  var types = __webpack_require__(167);
 	  var traits = expression.traits;
 	  var counts = expression.counts;
 	  var output;
@@ -47216,7 +47276,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 162 */
+/* 163 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -47236,13 +47296,13 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 163 */
+/* 164 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
 	var _ = __webpack_require__(2);
 	var random = __webpack_require__(153);
-	var genomeLibrary = __webpack_require__(164);
+	var genomeLibrary = __webpack_require__(165);
 
 	function meiosis(genome) {
 	  var zygote = [];
@@ -47349,7 +47409,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 164 */
+/* 165 */
 /***/ function(module, exports) {
 
 	var library = {
@@ -47384,7 +47444,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 165 */
+/* 166 */
 /***/ function(module, exports) {
 
 	module.exports = {
@@ -47459,7 +47519,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 166 */
+/* 167 */
 /***/ function(module, exports) {
 
 	var types = [
@@ -47498,7 +47558,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 167 */
+/* 168 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var GameTime = __webpack_require__(137);

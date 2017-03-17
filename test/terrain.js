@@ -29,7 +29,7 @@ describe('terrain system', function () {
   it('can find arable tiles', function () {
     const positions = TerrainSystem.findArablePositions();
     positions.forEach((position) => {
-      expect(TerrainSystem.arable(position.x, position.y)).to.equal(true);
+      expect(TerrainSystem.arable(position.x, position.y)).to.be.truthy;
     });
   });
 
@@ -38,8 +38,14 @@ describe('terrain system', function () {
     var position = TerrainSystem.findArablePositions()[0];
     var arable = Arable.get(position.entity);
     TerrainSystem.plant(entity, position.x, position.y);
-    expect(TerrainSystem.arable(position.x, position.y)).to.equal(false);
     expect(arable.planted).to.equal(entity.id);
+  });
+
+  it('can find plantable tiles', function () {
+    var p = TerrainSystem.findArablePositions()[0];
+    var p2 = TerrainSystem.findArablePositions()[1];
+    expect(TerrainSystem.plantable(p.x, p.y)).to.equal(false);
+    expect(TerrainSystem.plantable(p2.x, p2.y)).to.equal(true);
   });
 
   it('can clear its tiles', function () {
