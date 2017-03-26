@@ -1,5 +1,6 @@
 
 var Position = require('../components/position.js');
+var Arable = require('../components/arable.js');
 var Spring = require('../components/spring.js');
 var TerrainSystem = require('../systems/terrain.js');
 
@@ -14,6 +15,7 @@ function update(gametime) {
   // provide arable resources once per day
   if (time - lastTick < DAY) return;
   Spring.each(updateSpring);
+  Arable.each(updateArable);
 }
 
 function updateSpring(spring) {
@@ -38,6 +40,13 @@ function updateSpring(spring) {
   }
 
   return spring;
+}
+
+function updateArable(arable) {
+  var MIN_WATER = 0;
+  var waterConsumption = Math.floor(arable.light / 10) + (arable.planted ? 10 : 0);
+  arable.water = Math.max(arable.water - waterConsumption, MIN_WATER);
+  return arable;
 }
 
 module.exports = {

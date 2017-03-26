@@ -46730,6 +46730,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	
 	var Position = __webpack_require__(141);
+	var Arable = __webpack_require__(150);
 	var Spring = __webpack_require__(151);
 	var TerrainSystem = __webpack_require__(148);
 
@@ -46744,6 +46745,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  // provide arable resources once per day
 	  if (time - lastTick < DAY) return;
 	  Spring.each(updateSpring);
+	  Arable.each(updateArable);
 	}
 
 	function updateSpring(spring) {
@@ -46768,6 +46770,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 
 	  return spring;
+	}
+
+	function updateArable(arable) {
+	  var MIN_WATER = 0;
+	  var waterConsumption = Math.floor(arable.light / 10) + (arable.planted ? 10 : 0);
+	  arable.water = Math.max(arable.water - waterConsumption, MIN_WATER);
+	  return arable;
 	}
 
 	module.exports = {
