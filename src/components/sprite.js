@@ -4,7 +4,7 @@ var Component = require('../base/component.js');
 var Sprite = new Component('sprite', {
   frameset: null,
   frameindex: 0,
-  fps: 0,
+  fps: 1,
   layer: null,
   subsprites: [],
   color_filter: [1, 1, 1, 1], // [r, g, b, a]

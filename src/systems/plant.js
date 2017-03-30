@@ -12,7 +12,7 @@ function Plant(chromosomes, x, y) {
   var genome = plant.set(Genome, {chromosomes: chromosomes});
   var growth = plant.set(Growth);
   plant.set(Position, {x: x, y: y});
-  plant.set(Sprite, {fps: 1, layer: 1});
+  plant.set(Sprite, {layer: 1});
 
   var expression = GenomeSystem.express(genome);
 

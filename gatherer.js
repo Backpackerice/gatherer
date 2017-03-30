@@ -45819,7 +45819,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var Sprite = new Component('sprite', {
 	  frameset: null,
 	  frameindex: 0,
-	  fps: 0,
+	  fps: 1,
 	  layer: null,
 	  subsprites: [],
 	  color_filter: [1, 1, 1, 1], // [r, g, b, a]
@@ -47284,7 +47284,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var genome = plant.set(Genome, {chromosomes: chromosomes});
 	  var growth = plant.set(Growth);
 	  plant.set(Position, {x: x, y: y});
-	  plant.set(Sprite, {fps: 1, layer: 1});
+	  plant.set(Sprite, {layer: 1});
 
 	  var expression = GenomeSystem.express(genome);
 
