@@ -1,26 +1,25 @@
 var Gatherer = {};
+Gatherer.Systems = {};
+Gatherer.Components = {};
+
 var Game = require('./base/game.js');
 
 // Entities
 var Character = require('./systems/character.js');
 
 // Systems
-var ControlSystem = require('./systems/controls.js');
-var SpriteSystem = require('./systems/sprite.js');
-var LightingSystem = require('./systems/lighting.js');
-var TerrainSystem = require('./systems/terrain.js');
-var EnvironmentSystem = require('./systems/environment.js');
-var GrowthSystem = require('./systems/growth.js');
-var MovementSystem = require('./systems/movement.js');
-var ActionSystem = require('./systems/action.js');
-var ResourceSystem = require('./systems/resources.js');
+var ControlSystem   = registerSystem('controls', require('./systems/controls.js'));
+var SpriteSystem    = registerSystem('sprite', require('./systems/sprite.js'));
+var LightingSystem  = registerSystem('lighting', require('./systems/lighting.js'));
+var TerrainSystem   = registerSystem('terrain', require('./systems/terrain.js'));
+var EnvironmentSystem = registerSystem('environment', require('./systems/environment.js'));
+var GrowthSystem    = registerSystem('growth', require('./systems/growth.js'));
+var MovementSystem  = registerSystem('movement', require('./systems/movement.js'));
+var ActionSystem    = registerSystem('action', require('./systems/action.js'));
+var ResourceSystem  = registerSystem('resource', require('./systems/resources.js'));
 
 var game;
 var assets = ['assets/sprites.json', 'assets/herbs.json', 'assets/leaves.json'];
-var registerComponent = function (name, component) {
-  Gatherer[name] = component;
-  game.registerUpdate(component.cleanup.bind(component));
-};
 
 // Development Testing
 Gatherer.time = require('./helpers/timecycle.js');
@@ -33,7 +32,7 @@ Gatherer.start = function () {
       SpriteSystem.setup(game.stage);
       LightingSystem.setup(game.stage);
       ControlSystem.setup(document.body);
-      TerrainSystem.generate(12, 12);
+      TerrainSystem.generate(8, 8);
 
       var character = new Character(0, 0);
       ControlSystem.entity(character);
@@ -64,5 +63,16 @@ Gatherer.start = function () {
   var view = game.start();
   document.body.appendChild(view);
 };
+
+function registerComponent(name, component) {
+  Gatherer.Components[name] = component;
+  game.registerUpdate(component.cleanup.bind(component));
+  return component;
+}
+
+function registerSystem(name, system) {
+  Gatherer.Systems[name] = system;
+  return system;
+}
 
 module.exports = Gatherer;

@@ -17,33 +17,13 @@ function update(gametime) {
 
   lastTick = lastTick || time;
 
+  Arable.each(updateArable);
+
   // provide arable resources once per day
   if (time - lastTick < DAY) return;
   Spring.each(updateSpring);
-  Arable.each(updateArable);
-}
-
-function updateSpring(spring) {
-  var range = spring.water_range;
-  var level = spring.water_level;
-  var {x, y} = Position.get(spring.entity);
-
-  var arable;
-  var minX = Math.max(0, x - range);
-  var maxX = x + range;
-  var minY = Math.max(0, y - range);
-  var maxY = y + range;
-
-  for (var i = minX; i < maxX; i++) {
-    for (var j = minY; j < maxY; j++) {
-      arable = TerrainSystem.arable(i, j);
-      if (arable) {
-        arable.water = Math.min(arable.water + level, MAX_WATER);
-      }
-    }
-  }
-
-  return spring;
+  Arable.each(updateArableWater);
+  lastTick = time;
 }
 
 function updateArable(arable) {
@@ -52,12 +32,38 @@ function updateArable(arable) {
 
   var sprite = Sprite.get(arable.entity);
   var terrain = Terrain.get(arable.entity);
-  var waterConsumption = Math.floor(arable.light / 10) + (arable.planted ? 10 : 0);
-  arable.water = Math.max(arable.water - waterConsumption, MIN_WATER);
 
   var adjustedWater = Math.min(arable.water, MAX_WATER - 1);
   var waterLevel = Math.floor(adjustedWater / (RANGE_WATER / NUM_LEVELS)) % NUM_LEVELS;
   sprite.frameset = Resources.getTerrainFrameSetKey(terrain.type, waterLevel);
+  return arable;
+}
+
+function updateSpring(spring) {
+  var range = spring.water_range;
+  var level = spring.water_level;
+  var {x, y} = Position.get(spring.entity);
+
+  var arable;
+  var minX = x - range;
+  var maxX = x + range;
+  var minY = y - range;
+  var maxY = y + range;
+
+  for (var i = minX; i <= maxX; i++) {
+    for (var j = minY; j <= maxY; j++) {
+      arable = TerrainSystem.arable(i, j);
+      if (arable) {
+        arable.water = Math.min(arable.water + level, MAX_WATER);
+      }
+    }
+  }
+  return spring;
+}
+
+function updateArableWater(arable) {
+  var waterConsumption = Math.floor(arable.light / 20) + (arable.planted ? 10 : 0);
+  arable.water = Math.max(arable.water - waterConsumption, MIN_WATER);
   return arable;
 }
 

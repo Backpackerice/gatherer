@@ -55,28 +55,27 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	var Gatherer = {};
+	Gatherer.Systems = {};
+	Gatherer.Components = {};
+
 	var Game = __webpack_require__(1);
 
 	// Entities
 	var Character = __webpack_require__(138);
 
 	// Systems
-	var ControlSystem = __webpack_require__(144);
-	var SpriteSystem = __webpack_require__(145);
-	var LightingSystem = __webpack_require__(147);
-	var TerrainSystem = __webpack_require__(148);
-	var EnvironmentSystem = __webpack_require__(155);
-	var GrowthSystem = __webpack_require__(156);
-	var MovementSystem = __webpack_require__(159);
-	var ActionSystem = __webpack_require__(160);
-	var ResourceSystem = __webpack_require__(146);
+	var ControlSystem   = registerSystem('controls', __webpack_require__(144));
+	var SpriteSystem    = registerSystem('sprite', __webpack_require__(145));
+	var LightingSystem  = registerSystem('lighting', __webpack_require__(147));
+	var TerrainSystem   = registerSystem('terrain', __webpack_require__(148));
+	var EnvironmentSystem = registerSystem('environment', __webpack_require__(155));
+	var GrowthSystem    = registerSystem('growth', __webpack_require__(156));
+	var MovementSystem  = registerSystem('movement', __webpack_require__(159));
+	var ActionSystem    = registerSystem('action', __webpack_require__(160));
+	var ResourceSystem  = registerSystem('resource', __webpack_require__(146));
 
 	var game;
 	var assets = ['assets/sprites.json', 'assets/herbs.json', 'assets/leaves.json'];
-	var registerComponent = function (name, component) {
-	  Gatherer[name] = component;
-	  game.registerUpdate(component.cleanup.bind(component));
-	};
 
 	// Development Testing
 	Gatherer.time = __webpack_require__(168);
@@ -89,7 +88,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      SpriteSystem.setup(game.stage);
 	      LightingSystem.setup(game.stage);
 	      ControlSystem.setup(document.body);
-	      TerrainSystem.generate(12, 12);
+	      TerrainSystem.generate(8, 8);
 
 	      var character = new Character(0, 0);
 	      ControlSystem.entity(character);
@@ -120,6 +119,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var view = game.start();
 	  document.body.appendChild(view);
 	};
+
+	function registerComponent(name, component) {
+	  Gatherer.Components[name] = component;
+	  game.registerUpdate(component.cleanup.bind(component));
+	  return component;
+	}
+
+	function registerSystem(name, system) {
+	  Gatherer.Systems[name] = system;
+	  return system;
+	}
 
 	module.exports = Gatherer;
 
@@ -46311,7 +46321,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    sprite: { frameset: Resources.getTerrainFrameSetKey('soil', 0) },
 	    arable: {
 	      light: [50, 50],
-	      water: [20, 80],
+	      water: [40, 40],
 	      nutrients: [60, 100]
 	    }
 	  },
@@ -46319,7 +46329,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    terrain: { type: 'spring' },
 	    sprite: { frameset: Resources.getTerrainFrameSetKey('water') },
 	    spring: {
-	      water_level: 5,
+	      water_level: 6,
 	      water_range: 1
 	    }
 	  }
@@ -46352,7 +46362,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	function generate(cols, rows) {
 	  for (var x = 0; x < cols; x++) {
 	    for (var y = 0; y < rows; y++) {
-	      var sample = random.int(0, terrainTypes.length); // always soil for now
+	      var sample = random.int(0, terrainTypes.length);
 	      var type = terrainTypes[sample];
 
 	      var entity = new Entity();
@@ -46398,7 +46408,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 	function arable(x, y) {
-	  var arableComponent = Arable.get(get(x, y));
+	  var entity = get(x, y);
+	  if (!entity) return null;
+
+	  var arableComponent = Arable.get(entity);
 	  return arableComponent;
 	}
 
@@ -46754,33 +46767,13 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  lastTick = lastTick || time;
 
+	  Arable.each(updateArable);
+
 	  // provide arable resources once per day
 	  if (time - lastTick < DAY) return;
 	  Spring.each(updateSpring);
-	  Arable.each(updateArable);
-	}
-
-	function updateSpring(spring) {
-	  var range = spring.water_range;
-	  var level = spring.water_level;
-	  var {x, y} = Position.get(spring.entity);
-
-	  var arable;
-	  var minX = Math.max(0, x - range);
-	  var maxX = x + range;
-	  var minY = Math.max(0, y - range);
-	  var maxY = y + range;
-
-	  for (var i = minX; i < maxX; i++) {
-	    for (var j = minY; j < maxY; j++) {
-	      arable = TerrainSystem.arable(i, j);
-	      if (arable) {
-	        arable.water = Math.min(arable.water + level, MAX_WATER);
-	      }
-	    }
-	  }
-
-	  return spring;
+	  Arable.each(updateArableWater);
+	  lastTick = time;
 	}
 
 	function updateArable(arable) {
@@ -46789,12 +46782,38 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  var sprite = Sprite.get(arable.entity);
 	  var terrain = Terrain.get(arable.entity);
-	  var waterConsumption = Math.floor(arable.light / 10) + (arable.planted ? 10 : 0);
-	  arable.water = Math.max(arable.water - waterConsumption, MIN_WATER);
 
 	  var adjustedWater = Math.min(arable.water, MAX_WATER - 1);
 	  var waterLevel = Math.floor(adjustedWater / (RANGE_WATER / NUM_LEVELS)) % NUM_LEVELS;
 	  sprite.frameset = Resources.getTerrainFrameSetKey(terrain.type, waterLevel);
+	  return arable;
+	}
+
+	function updateSpring(spring) {
+	  var range = spring.water_range;
+	  var level = spring.water_level;
+	  var {x, y} = Position.get(spring.entity);
+
+	  var arable;
+	  var minX = x - range;
+	  var maxX = x + range;
+	  var minY = y - range;
+	  var maxY = y + range;
+
+	  for (var i = minX; i <= maxX; i++) {
+	    for (var j = minY; j <= maxY; j++) {
+	      arable = TerrainSystem.arable(i, j);
+	      if (arable) {
+	        arable.water = Math.min(arable.water + level, MAX_WATER);
+	      }
+	    }
+	  }
+	  return spring;
+	}
+
+	function updateArableWater(arable) {
+	  var waterConsumption = Math.floor(arable.light / 20) + (arable.planted ? 10 : 0);
+	  arable.water = Math.max(arable.water - waterConsumption, MIN_WATER);
 	  return arable;
 	}
 

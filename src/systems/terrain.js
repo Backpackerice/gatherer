@@ -19,7 +19,7 @@ var terrainTypes = [
     sprite: { frameset: Resources.getTerrainFrameSetKey('soil', 0) },
     arable: {
       light: [50, 50],
-      water: [20, 80],
+      water: [40, 40],
       nutrients: [60, 100]
     }
   },
@@ -27,7 +27,7 @@ var terrainTypes = [
     terrain: { type: 'spring' },
     sprite: { frameset: Resources.getTerrainFrameSetKey('water') },
     spring: {
-      water_level: 5,
+      water_level: 6,
       water_range: 1
     }
   }
@@ -60,7 +60,7 @@ function get(x, y) {
 function generate(cols, rows) {
   for (var x = 0; x < cols; x++) {
     for (var y = 0; y < rows; y++) {
-      var sample = random.int(0, terrainTypes.length); // always soil for now
+      var sample = random.int(0, terrainTypes.length);
       var type = terrainTypes[sample];
 
       var entity = new Entity();
@@ -106,7 +106,10 @@ function findArablePositions() {
 }
 
 function arable(x, y) {
-  var arableComponent = Arable.get(get(x, y));
+  var entity = get(x, y);
+  if (!entity) return null;
+
+  var arableComponent = Arable.get(entity);
   return arableComponent;
 }
 
