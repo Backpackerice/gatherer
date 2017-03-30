@@ -52,17 +52,21 @@ function getFrameSet(frameset) {
 }
 
 function getStemFrameSetKey(type, appearance, size) {
-  if (size === 0) return 'growth-0_1';
+  if (size === 0) return 'seed-0';
   return `${type}.${appearance}.${size}`;
 }
 
 function getStemFrameNodules(frameset) {
-  if (frameset === 'growth-0_1') return [];
+  if (frameset === 'seed-0') return [];
   return getFrameSet(frameset)[0].meta.nodules;
 }
 
 function getLeafFrameSetKey(appearance) {
   return `leaf.${appearance}`;
+}
+
+function getTerrainFrameSetKey(type, mod) {
+  return `tile-${type}${mod != null ? `-${mod}` : ``}`;
 }
 
 module.exports = {
@@ -71,6 +75,7 @@ module.exports = {
   getTextureSet,
   getFrameSet,
   getStemFrameSetKey,
+  getTerrainFrameSetKey,
   getStemFrameNodules,
   getLeafFrameSetKey
 };

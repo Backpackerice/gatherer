@@ -6,6 +6,8 @@ var Arable = require('../components/arable.js');
 var Spring = require('../components/spring.js');
 var Position = require('../components/position.js');
 var Sprite = require('../components/sprite.js');
+var Resources = require('../systems/resources.js');
+
 var pairing = require('../helpers/pairing.js');
 var random = require('../base/random.js');
 var tiles = {};
@@ -14,7 +16,7 @@ var tiles = {};
 var terrainTypes = [
   {
     terrain: { type: 'soil' },
-    sprite: { frameset: 'tile-soil' },
+    sprite: { frameset: Resources.getTerrainFrameSetKey('soil', 0) },
     arable: {
       light: [50, 50],
       water: [20, 80],
@@ -23,7 +25,7 @@ var terrainTypes = [
   },
   {
     terrain: { type: 'spring' },
-    sprite: { frameset: 'tile-water' },
+    sprite: { frameset: Resources.getTerrainFrameSetKey('water') },
     spring: {
       water_level: 5,
       water_range: 1

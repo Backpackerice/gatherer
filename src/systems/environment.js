@@ -1,10 +1,15 @@
 
+var Sprite = require('../components/sprite.js');
 var Position = require('../components/position.js');
 var Arable = require('../components/arable.js');
 var Spring = require('../components/spring.js');
+var Terrain = require('../components/terrain.js');
 var TerrainSystem = require('../systems/terrain.js');
+var Resources = require('../systems/resources.js');
 
 var lastTick = null;
+var MIN_WATER = 0;
+var MAX_WATER = 100;
 
 function update(gametime) {
   var DAY = 60*24;
@@ -19,7 +24,6 @@ function update(gametime) {
 }
 
 function updateSpring(spring) {
-  var MAX_LEVEL = 100;
   var range = spring.water_range;
   var level = spring.water_level;
   var {x, y} = Position.get(spring.entity);
@@ -34,7 +38,7 @@ function updateSpring(spring) {
     for (var j = minY; j < maxY; j++) {
       arable = TerrainSystem.arable(i, j);
       if (arable) {
-        arable.water = Math.min(arable.water + level, MAX_LEVEL);
+        arable.water = Math.min(arable.water + level, MAX_WATER);
       }
     }
   }
@@ -43,9 +47,17 @@ function updateSpring(spring) {
 }
 
 function updateArable(arable) {
-  var MIN_WATER = 0;
+  var NUM_LEVELS = 4;
+  var RANGE_WATER = MAX_WATER - MIN_WATER;
+
+  var sprite = Sprite.get(arable.entity);
+  var terrain = Terrain.get(arable.entity);
   var waterConsumption = Math.floor(arable.light / 10) + (arable.planted ? 10 : 0);
   arable.water = Math.max(arable.water - waterConsumption, MIN_WATER);
+
+  var adjustedWater = Math.min(arable.water, MAX_WATER - 1);
+  var waterLevel = Math.floor(adjustedWater / (RANGE_WATER / NUM_LEVELS)) % NUM_LEVELS;
+  sprite.frameset = Resources.getTerrainFrameSetKey(terrain.type, waterLevel);
   return arable;
 }
 

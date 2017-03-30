@@ -46117,17 +46117,21 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 	function getStemFrameSetKey(type, appearance, size) {
-	  if (size === 0) return 'growth-0_1';
+	  if (size === 0) return 'seed-0';
 	  return `${type}.${appearance}.${size}`;
 	}
 
 	function getStemFrameNodules(frameset) {
-	  if (frameset === 'growth-0_1') return [];
+	  if (frameset === 'seed-0') return [];
 	  return getFrameSet(frameset)[0].meta.nodules;
 	}
 
 	function getLeafFrameSetKey(appearance) {
 	  return `leaf.${appearance}`;
+	}
+
+	function getTerrainFrameSetKey(type, mod) {
+	  return `tile-${type}${mod != null ? `-${mod}` : ``}`;
 	}
 
 	module.exports = {
@@ -46136,6 +46140,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  getTextureSet,
 	  getFrameSet,
 	  getStemFrameSetKey,
+	  getTerrainFrameSetKey,
 	  getStemFrameNodules,
 	  getLeafFrameSetKey
 	};
@@ -46293,6 +46298,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	var Spring = __webpack_require__(151);
 	var Position = __webpack_require__(141);
 	var Sprite = __webpack_require__(143);
+	var Resources = __webpack_require__(146);
+
 	var pairing = __webpack_require__(152);
 	var random = __webpack_require__(153);
 	var tiles = {};
@@ -46301,7 +46308,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var terrainTypes = [
 	  {
 	    terrain: { type: 'soil' },
-	    sprite: { frameset: 'tile-soil' },
+	    sprite: { frameset: Resources.getTerrainFrameSetKey('soil', 0) },
 	    arable: {
 	      light: [50, 50],
 	      water: [20, 80],
@@ -46310,7 +46317,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  },
 	  {
 	    terrain: { type: 'spring' },
-	    sprite: { frameset: 'tile-water' },
+	    sprite: { frameset: Resources.getTerrainFrameSetKey('water') },
 	    spring: {
 	      water_level: 5,
 	      water_range: 1
@@ -46729,12 +46736,17 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	
+	var Sprite = __webpack_require__(143);
 	var Position = __webpack_require__(141);
 	var Arable = __webpack_require__(150);
 	var Spring = __webpack_require__(151);
+	var Terrain = __webpack_require__(149);
 	var TerrainSystem = __webpack_require__(148);
+	var Resources = __webpack_require__(146);
 
 	var lastTick = null;
+	var MIN_WATER = 0;
+	var MAX_WATER = 100;
 
 	function update(gametime) {
 	  var DAY = 60*24;
@@ -46749,7 +46761,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 	function updateSpring(spring) {
-	  var MAX_LEVEL = 100;
 	  var range = spring.water_range;
 	  var level = spring.water_level;
 	  var {x, y} = Position.get(spring.entity);
@@ -46764,7 +46775,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    for (var j = minY; j < maxY; j++) {
 	      arable = TerrainSystem.arable(i, j);
 	      if (arable) {
-	        arable.water = Math.min(arable.water + level, MAX_LEVEL);
+	        arable.water = Math.min(arable.water + level, MAX_WATER);
 	      }
 	    }
 	  }
@@ -46773,9 +46784,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 	function updateArable(arable) {
-	  var MIN_WATER = 0;
+	  var NUM_LEVELS = 4;
+	  var RANGE_WATER = MAX_WATER - MIN_WATER;
+
+	  var sprite = Sprite.get(arable.entity);
+	  var terrain = Terrain.get(arable.entity);
 	  var waterConsumption = Math.floor(arable.light / 10) + (arable.planted ? 10 : 0);
 	  arable.water = Math.max(arable.water - waterConsumption, MIN_WATER);
+
+	  var adjustedWater = Math.min(arable.water, MAX_WATER - 1);
+	  var waterLevel = Math.floor(adjustedWater / (RANGE_WATER / NUM_LEVELS)) % NUM_LEVELS;
+	  sprite.frameset = Resources.getTerrainFrameSetKey(terrain.type, waterLevel);
 	  return arable;
 	}
 

@@ -2,72 +2,72 @@
   "frames": [
     {
       "name": "char-0",
-      "frame": {"x":0,"y":61,"w":16,"h":19},
+      "frame": {
+        "x": 0,
+        "y": 61,
+        "w": 16,
+        "h": 19
+      },
       "meta": {}
     },
     {
-      "name": "growth-0_1",
-      "frame": {"x":0,"y":16,"w":16,"h":16},
+      "name": "seed-0",
+      "frame": {
+        "x": 0,
+        "y": 32,
+        "w": 16,
+        "h": 16
+      },
       "meta": {}
     },
     {
-      "name": "growth-0_1",
-      "frame": {"x":0,"y":32,"w":16,"h":16},
+      "name": "tile-soil-0",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 16,
+        "h": 16
+      },
       "meta": {}
     },
     {
-      "name": "growth-1_1",
-      "frame": {"x":16,"y":16,"w":16,"h":16},
+      "name": "tile-soil-1",
+      "frame": {
+        "x": 16,
+        "y": 0,
+        "w": 16,
+        "h": 16
+      },
       "meta": {}
     },
     {
-      "name": "growth-1_1",
-      "frame": {"x":16,"y":32,"w":16,"h":16},
+      "name": "tile-soil-2",
+      "frame": {
+        "x": 32,
+        "y": 0,
+        "w": 16,
+        "h": 16
+      },
       "meta": {}
     },
     {
-      "name": "growth-2_1",
-      "frame": {"x":32,"y":16,"w":16,"h":16},
-      "meta": {}
-    },
-    {
-      "name": "growth-2_1",
-      "frame": {"x":32,"y":32,"w":16,"h":16},
-      "meta": {}
-    },
-    {
-      "name": "growth-3_1",
-      "frame": {"x":48,"y":16,"w":16,"h":16},
-      "meta": {}
-    },
-    {
-      "name": "growth-3_1",
-      "frame": {"x":48,"y":32,"w":16,"h":16},
-      "meta": {}
-    },
-    {
-      "name": "growth-4_1",
-      "frame": {"x":64,"y":16,"w":16,"h":16},
-      "meta": {}
-    },
-    {
-      "name": "growth-4_1",
-      "frame": {"x":64,"y":32,"w":16,"h":16},
-      "meta": {}
-    },
-    {
-      "name": "tile-light",
-      "frame": {"x":32,"y":0,"w":16,"h":16},
-      "meta": {}
-    },
-    {
-      "name": "tile-soil",
-      "frame": {"x":0,"y":0,"w":16,"h":16},
+      "name": "tile-soil-3",
+      "frame": {
+        "x": 48,
+        "y": 0,
+        "w": 16,
+        "h": 16
+      },
       "meta": {}
     },
     {
       "name": "tile-water",
-      "frame": {"x":16,"y":0,"w":16,"h":16},
+      "frame": {
+        "x": 0,
+        "y": 16,
+        "w": 16,
+        "h": 16
+      },
       "meta": {}
     }
   ],
