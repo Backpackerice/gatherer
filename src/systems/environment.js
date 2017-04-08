@@ -52,7 +52,7 @@ function updateSpring(spring) {
 
   for (var i = minX; i <= maxX; i++) {
     for (var j = minY; j <= maxY; j++) {
-      arable = TerrainSystem.arable(i, j);
+      arable = getArable(i, j);
       if (arable) {
         arable.water = Math.min(arable.water + level, MAX_WATER);
       }
@@ -67,6 +67,42 @@ function updateArableWater(arable) {
   return arable;
 }
 
+function findArablePositions() {
+  var positions = [];
+  TerrainSystem.each((tile) => {
+    var position = Position.get(tile);
+    if (getArable(position.x, position.y)){
+      positions.push(position);
+    }
+  });
+  return positions;
+}
+
+function getArable(x, y) {
+  var entity = TerrainSystem.get(x, y);
+  if (!entity) return null;
+
+  var arableComponent = Arable.get(entity);
+  return arableComponent;
+}
+
+function canPlant(x, y) {
+  var arable = getArable(x, y);
+  return arable && !arable.planted;
+}
+
+function plant(entity, x, y) {
+  var arable = getArable(x, y);
+  var plantable = canPlant(x, y);
+  if (!plantable) return;
+  arable.planted = entity.id;
+  return arable;
+}
+
 module.exports = {
-  update
+  update,
+  plant,
+  findArablePositions,
+  getArable,
+  canPlant
 };

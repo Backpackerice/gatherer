@@ -45695,9 +45695,8 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    unregister: function () {
 	      var entity = this.entity;
-	      this.stopListening();
 	      this.entity = null;
-	      entities[entity.id] = null;
+	      delete entities[entity.id];
 	      pool.push(this);
 	      return this;
 	    },
@@ -46359,6 +46358,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return tiles[pairing(x, y)];
 	}
 
+	function each(fn) {
+	  return _.each(tiles, fn);
+	}
+
 	function generate(cols, rows) {
 	  for (var x = 0; x < cols; x++) {
 	    for (var y = 0; y < rows; y++) {
@@ -46396,54 +46399,25 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return entity.set(Sprite, {layer: 0, frameset: props.frameset});
 	}
 
-	function findArablePositions() {
-	  var positions = [];
-	  _.each(tiles, (tile) => {
-	    var position = Position.get(tile);
-	    if (arable(position.x, position.y)){
-	      positions.push(position);
-	    }
-	  });
-	  return positions;
-	}
-
-	function arable(x, y) {
-	  var entity = get(x, y);
-	  if (!entity) return null;
-
-	  var arableComponent = Arable.get(entity);
-	  return arableComponent;
-	}
-
-	function plantable(x, y) {
-	  var isArable = arable(x, y);
-	  return isArable && !isArable.planted;
-	}
-
-	function plant(entity, x, y) {
-	  var isArable = arable(x, y);
-	  var isPlantable = plantable(x, y);
-	  if (!isPlantable) return;
-	  isArable.planted = entity.id;
-	  return isArable;
-	}
-
 	function clear() {
 	  var tileKeys = _.keys(tiles);
 	  _.each(tileKeys, function (key) {
+	    tiles[key].destroy();
 	    delete tiles[key];
 	  });
+
+	  Arable.cleanup();
+	  Spring.cleanup();
+	  Terrain.cleanup();
+	  Position.cleanup();
 	}
 
 	module.exports = {
 	  update: update,
 	  get: get,
-	  arable: arable,
-	  plantable,
-	  plant: plant,
+	  each,
 	  generate: generate,
-	  clear: clear,
-	  findArablePositions
+	  clear: clear
 	};
 
 
@@ -46802,7 +46776,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  for (var i = minX; i <= maxX; i++) {
 	    for (var j = minY; j <= maxY; j++) {
-	      arable = TerrainSystem.arable(i, j);
+	      arable = getArable(i, j);
 	      if (arable) {
 	        arable.water = Math.min(arable.water + level, MAX_WATER);
 	      }
@@ -46817,8 +46791,44 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return arable;
 	}
 
+	function findArablePositions() {
+	  var positions = [];
+	  TerrainSystem.each((tile) => {
+	    var position = Position.get(tile);
+	    if (getArable(position.x, position.y)){
+	      positions.push(position);
+	    }
+	  });
+	  return positions;
+	}
+
+	function getArable(x, y) {
+	  var entity = TerrainSystem.get(x, y);
+	  if (!entity) return null;
+
+	  var arableComponent = Arable.get(entity);
+	  return arableComponent;
+	}
+
+	function canPlant(x, y) {
+	  var arable = getArable(x, y);
+	  return arable && !arable.planted;
+	}
+
+	function plant(entity, x, y) {
+	  var arable = getArable(x, y);
+	  var plantable = canPlant(x, y);
+	  if (!plantable) return;
+	  arable.planted = entity.id;
+	  return arable;
+	}
+
 	module.exports = {
-	  update
+	  update,
+	  plant,
+	  findArablePositions,
+	  getArable,
+	  canPlant
 	};
 
 
@@ -47237,7 +47247,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var Plant = __webpack_require__(162);
 	var Position = __webpack_require__(141);
 	var GenomeSystem = __webpack_require__(164);
-	var TerrainSystem = __webpack_require__(148);
+	var EnvironmentSystem = __webpack_require__(155);
 	var genomeLib = __webpack_require__(165);
 
 	var randomGenome = GenomeSystem.generator(genomeLib, 1);
@@ -47249,14 +47259,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var x = Math.round(position.x);
 	  var y = Math.round(position.y);
 
-	  var canPlant = TerrainSystem.arable(x, y);
+	  var canPlant = EnvironmentSystem.canPlant(x, y);
 	  var chromosomes;
 	  var plant;
 
 	  if (canPlant) {
 	    chromosomes = randomGenome.next().value;
 	    plant = new Plant(chromosomes, x, y);
-	    TerrainSystem.plant(plant, x, y);
+	    EnvironmentSystem.plant(plant, x, y);
 	  }
 	  return plant;
 	}

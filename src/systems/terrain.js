@@ -57,6 +57,10 @@ function get(x, y) {
   return tiles[pairing(x, y)];
 }
 
+function each(fn) {
+  return _.each(tiles, fn);
+}
+
 function generate(cols, rows) {
   for (var x = 0; x < cols; x++) {
     for (var y = 0; y < rows; y++) {
@@ -94,52 +98,23 @@ function generateSprite(entity, props) {
   return entity.set(Sprite, {layer: 0, frameset: props.frameset});
 }
 
-function findArablePositions() {
-  var positions = [];
-  _.each(tiles, (tile) => {
-    var position = Position.get(tile);
-    if (arable(position.x, position.y)){
-      positions.push(position);
-    }
-  });
-  return positions;
-}
-
-function arable(x, y) {
-  var entity = get(x, y);
-  if (!entity) return null;
-
-  var arableComponent = Arable.get(entity);
-  return arableComponent;
-}
-
-function plantable(x, y) {
-  var isArable = arable(x, y);
-  return isArable && !isArable.planted;
-}
-
-function plant(entity, x, y) {
-  var isArable = arable(x, y);
-  var isPlantable = plantable(x, y);
-  if (!isPlantable) return;
-  isArable.planted = entity.id;
-  return isArable;
-}
-
 function clear() {
   var tileKeys = _.keys(tiles);
   _.each(tileKeys, function (key) {
+    tiles[key].destroy();
     delete tiles[key];
   });
+
+  Arable.cleanup();
+  Spring.cleanup();
+  Terrain.cleanup();
+  Position.cleanup();
 }
 
 module.exports = {
   update: update,
   get: get,
-  arable: arable,
-  plantable,
-  plant: plant,
+  each,
   generate: generate,
-  clear: clear,
-  findArablePositions
+  clear: clear
 };

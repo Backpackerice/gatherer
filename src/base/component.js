@@ -37,9 +37,8 @@ var Component = function (name, defaults, properties) {
 
     unregister: function () {
       var entity = this.entity;
-      this.stopListening();
       this.entity = null;
-      entities[entity.id] = null;
+      delete entities[entity.id];
       pool.push(this);
       return this;
     },
