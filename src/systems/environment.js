@@ -8,8 +8,9 @@ var TerrainSystem = require('../systems/terrain.js');
 var Resources = require('../systems/resources.js');
 
 var lastTick = null;
-var MIN_WATER = 0;
-var MAX_WATER = 100;
+var MIN_RESOURCE = 0;
+var MAX_RESOURCE = 100;
+var RANGE_RESOURCE = MAX_RESOURCE - MIN_RESOURCE;
 
 function update(gametime) {
   var DAY = 60*24;
@@ -22,19 +23,18 @@ function update(gametime) {
   // provide arable resources once per day
   if (time - lastTick < DAY) return;
   Spring.each(updateSpring);
-  Arable.each(updateArableWater);
+  Arable.each(updateArableResources);
   lastTick = time;
 }
 
 function updateArable(arable) {
   var NUM_LEVELS = 4;
-  var RANGE_WATER = MAX_WATER - MIN_WATER;
 
   var sprite = Sprite.get(arable.entity);
   var terrain = Terrain.get(arable.entity);
 
-  var adjustedWater = Math.min(arable.water, MAX_WATER - 1);
-  var waterLevel = Math.floor(adjustedWater / (RANGE_WATER / NUM_LEVELS)) % NUM_LEVELS;
+  var adjustedWater = Math.min(arable.water, MAX_RESOURCE - 1);
+  var waterLevel = Math.floor(adjustedWater / (RANGE_RESOURCE / NUM_LEVELS)) % NUM_LEVELS;
   sprite.frameset = Resources.getTerrainFrameSetKey(terrain.type, waterLevel);
   return arable;
 }
@@ -54,16 +54,19 @@ function updateSpring(spring) {
     for (var j = minY; j <= maxY; j++) {
       arable = getArable(i, j);
       if (arable) {
-        arable.water = Math.min(arable.water + level, MAX_WATER);
+        arable.water = Math.min(arable.water + level, MAX_RESOURCE);
       }
     }
   }
   return spring;
 }
 
-function updateArableWater(arable) {
-  var waterConsumption = Math.floor(arable.light / 20) + (arable.planted ? 10 : 0);
-  arable.water = Math.max(arable.water - waterConsumption, MIN_WATER);
+function updateArableResources(arable) {
+  var isPlanted = arable.planted;
+  var wDelta = -(Math.floor(arable.light / 20) + (isPlanted ? 10 : 0));
+  var nDelta = isPlanted ? -2 : 10;
+  arable.water = Math.max(arable.water + wDelta, MIN_RESOURCE);
+  arable.nutrients = Math.max(Math.min(arable.nutrients + nDelta, MAX_RESOURCE), MIN_RESOURCE);
   return arable;
 }
 
