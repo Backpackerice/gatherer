@@ -7,14 +7,14 @@ var Spring = require('../components/spring.js');
 var Position = require('../components/position.js');
 var Sprite = require('../components/sprite.js');
 var Resources = require('../systems/resources.js');
+var MapSystem = require('../systems/map');
 
 var pairing = require('../helpers/pairing.js');
 var random = require('../base/random.js');
 var tiles = {};
 
-// terrain types to randomly generate
-var terrainTypes = [
-  {
+var terrainTypes = {
+  arable: {
     terrain: { type: 'soil' },
     sprite: { frameset: Resources.getTerrainFrameSetKey('soil', 0) },
     arable: {
@@ -23,7 +23,7 @@ var terrainTypes = [
       nutrients: [60, 100]
     }
   },
-  {
+  river: {
     terrain: { type: 'spring' },
     sprite: { frameset: Resources.getTerrainFrameSetKey('water') },
     spring: {
@@ -31,7 +31,7 @@ var terrainTypes = [
       water_range: 1
     }
   }
-];
+};
 
 function update() {
   Terrain.each(function (terrain) {
@@ -62,10 +62,21 @@ function each(fn) {
 }
 
 function generate(cols, rows) {
+  var numRivers = random.int(1, 2);
+  var blockInfo = new MapSystem.BlockInfo(cols, rows);
+
+  for (var i = 0; i < numRivers; i++) {
+    let point = [0, random.int(Math.floor(cols/3), Math.floor(4 * cols/5))];
+    let direction = [random.int(1, 2), random.int(-1, 3)];
+    let speed = [random.random() * 2, random.random() / 2];
+    blockInfo.addRiver(point, direction, speed);
+  }
+
+  var map = MapSystem.generateBlock(blockInfo);
   for (var x = 0; x < cols; x++) {
     for (var y = 0; y < rows; y++) {
-      var sample = random.int(0, terrainTypes.length);
-      var type = terrainTypes[sample];
+      var block = map[y * rows + x];
+      var type = terrainTypes[block || 'arable'];
 
       var entity = new Entity();
       entity.set(Terrain, type.terrain);

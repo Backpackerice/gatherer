@@ -1,6 +1,6 @@
 
-function BlockInfo(size) {
-  this.size = size;
+function BlockInfo(rows, cols) {
+  this.size = [rows, cols];
   this.rivers = [];
 }
 
@@ -14,7 +14,7 @@ BlockInfo.prototype.addRiver = function (point, direction, speed) {
 
 function generateBlock(blockInfo) {
   var size = blockInfo.size;
-  var map = new Array(size * size);
+  var map = new Array(size[0] * size[1]);
 
   blockInfo.rivers.forEach(function(river) {
     generateRiver(map, blockInfo, river);
@@ -31,15 +31,16 @@ function generateRiver(blockMap, blockInfo, riverInfo) {
 
   var tick = 0;
   var check = function () {
-    return point[0] < blockInfo.size && point[0] >= 0 &&
-        point[1] < blockInfo.size && point[1] >= 0;
+    return point[0] < blockInfo.size[0] && point[0] >= 0 &&
+        point[1] < blockInfo.size[1] && point[1] >= 0;
   };
 
-  while (check() && tick < size * 2) {
-    blockMap[Math.floor(point[1]) * size + Math.floor(point[0])] = 'river';
+  while (check() && tick < size[0] * size[1]) {
+    blockMap[Math.floor(point[1]) * size[0] + Math.floor(point[0])] = 'river';
     speed = [speed[0] * 0.5, speed[1] * 0.5];
     delta = normalize([riverInfo.direction[0] * speed[0], riverInfo.direction[1] * speed[1]]);
     point = [point[0] + delta[0], point[1] + delta[1]];
+    tick++;
   }
 }
 
@@ -48,7 +49,7 @@ function printMap(map, blockInfo) {
   var line = '';
 
   for (var i = 0; i < map.length; i++) {
-    if (!(i % blockInfo.size) && line) {
+    if (!(i % blockInfo.size[0]) && line) {
       lines.push(line);
       line = '';
     }
