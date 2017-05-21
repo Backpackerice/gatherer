@@ -46961,6 +46961,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	      newEnergy = energy(growth, arable, time);
 	      growth.death_ticks += 1 * !newEnergy;
 
+	      if (growth.death_ticks > 3) {
+	        stage = 0;
+	      }
+
 	      GrowthStages[stage].update(growth, arable, time);
 	      newStage = GrowthStages[stage].next(growth, arable, time);
 
@@ -47091,12 +47095,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	var RIPENING  = 5;
 	var RESTING   = 6;
 
+	var DEATH_COLOR = [.1,.1,0,1];
+
 	function Stage(update, next) {
 	  this.update = update;
 	  this.next = next;
 	}
 
-	var Dead = new Stage(function () { return DEAD; }, '');
+	var Dead = new Stage(
+	  function (growth) {
+	    growth.color_stem = DEATH_COLOR;
+	    growth.color_leaf = DEATH_COLOR;
+	  },
+	  function () { return DEAD; }
+	);
 
 	var Seed = new Stage(
 	  function (growth) {

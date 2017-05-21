@@ -30,6 +30,10 @@ function update(gametime) {
       newEnergy = energy(growth, arable, time);
       growth.death_ticks += 1 * !newEnergy;
 
+      if (growth.death_ticks > 3) {
+        stage = 0;
+      }
+
       GrowthStages[stage].update(growth, arable, time);
       newStage = GrowthStages[stage].next(growth, arable, time);
 
